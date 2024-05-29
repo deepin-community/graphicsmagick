@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2004 - 2018 GraphicsMagick Group
+% Copyright (C) 2004 - 2022 GraphicsMagick Group
 %
 % This program is covered by multiple licenses, which are described in
 % Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -121,7 +121,7 @@ MagickExport MagickPassFail QuantumOperatorImage(Image *image,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  QuantumOperatorImageMultivalue() is a semi-private implementation
-%  fuction which accepts a comma delimited string of per-channel values
+%  function which accepts a comma delimited string of per-channel values
 %  and applies a specified operator to the channels of the image.  The
 %  main reason for this function to exist is to support
 %  ChannelThresholdPixels(), BlackThresholdImage(), WhiteThresholdImage(),
@@ -292,7 +292,7 @@ QuantumOperatorImageMultivalue(Image *image,
 %
 %    o x: Ordinate of left row of region.
 %
-%    o y: Orginate of top column of region.
+%    o y: Ordinate of top column of region.
 %
 %    o columns: Width of region.
 %
@@ -520,11 +520,13 @@ QuantumAssignCB(void *mutable_data,
 
   return (MagickPass);
 }
+#if 0
 #define ApplyChannelDepth(parameter)                                    \
   {                                                                     \
     for (i=0; i < npixels; i++)                                         \
       parameter=scale*((parameter)/scale);                              \
   }
+#endif
 #if MaxRGB > MaxMap
 #  define CrushChannelDepth(parameter) (scale*((parameter)/scale))
 #else
@@ -548,7 +550,7 @@ QuantumDepthCB(void *mutable_data,
   unsigned int
     depth;
 
-  register unsigned int
+  unsigned int
     scale;
 
   register long
@@ -585,16 +587,20 @@ QuantumDepthCB(void *mutable_data,
 
           if (mutable_context->channel_lut != (Quantum *) NULL)
             {
-              for (i=0; i <= (long) MaxMap; i++)
-                mutable_context->channel_lut[i] = scale*(i/scale);
+              unsigned int
+                li;
+
+              for (li=0; li <= MaxMap; li++)
+                mutable_context->channel_lut[li] = scale*(li/scale);
             }
         }
-#else
-      ARG_NOT_USED(*mutable_context);
-#endif
 
       if (MagickFail == status)
         return status;
+#else
+      ARG_NOT_USED(*mutable_context);
+      ARG_NOT_USED(status);
+#endif
 
       switch (immutable_context->channel)
         {
@@ -771,11 +777,13 @@ QuantumGammaCB(void *mutable_data,
                                            1.0/immutable_context->double_value));
         }
     }
-#else
-  ARG_NOT_USED(*mutable_context);
-#endif
+
   if (MagickFail == status)
     return status;
+#else
+  ARG_NOT_USED(*mutable_context);
+  ARG_NOT_USED(status);
+#endif
 
   switch (immutable_context->channel)
     {
@@ -951,12 +959,12 @@ QuantumLogCB(void *mutable_data,
             }
         }
     }
-#else
-  ARG_NOT_USED(*mutable_context);
-#endif
   if (MagickFail == status)
     return status;
-
+#else
+  ARG_NOT_USED(*mutable_context);
+  ARG_NOT_USED(status);
+#endif
   switch (immutable_context->channel)
     {
     case RedChannel:
@@ -1585,11 +1593,13 @@ QuantumPowCB(void *mutable_data,
                                            immutable_context->double_value));
         }
     }
-#else
-  ARG_NOT_USED(*mutable_context);
-#endif
+
   if (MagickFail == status)
     return status;
+#else
+  ARG_NOT_USED(*mutable_context);
+  ARG_NOT_USED(status);
+#endif
 
   switch (immutable_context->channel)
     {

@@ -57,8 +57,9 @@ TESTS_EXTRA_DIST = \
         tests/common.shi \
         tests/input_bilevel.miff \
         tests/input_gray.miff \
-        tests/input_pallette.miff \
-	tests/input_truecolor_70x46.miff \
+        tests/input_palette.miff \
+        tests/input_truecolor_1x266.miff \
+        tests/input_truecolor_70x46.miff \
         tests/input_truecolor.miff \
 	tests/input_truecolor10.dpx \
 	tests/input_truecolor12.dpx \

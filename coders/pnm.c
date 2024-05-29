@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -134,6 +134,41 @@ static unsigned int PNMInteger(Image *image,const unsigned int base)
   unsigned long
     value;
 
+  /*
+    Skip any leading whitespace.
+  */
+  do
+  {
+    c=ReadBlobByte(image);
+    if (c == EOF)
+      return(0);
+  } while (!isdigit(c));
+  if (base == 2)
+    return(c-'0');
+  /*
+    Evaluate number.
+  */
+  value=0;
+  do
+  {
+    value*=10;
+    value+=c-'0';
+    c=ReadBlobByte(image);
+    if (c == EOF)
+      return(value);
+  }
+  while (isdigit(c));
+  return(value);
+}
+
+static unsigned int PNMIntegerOrComment(Image *image,const unsigned int base)
+{
+  int
+    c;
+
+  unsigned long
+    value;
+
   static const char P7Comment[] = "END_OF_COMMENTS\n";
 
   /*
@@ -214,6 +249,7 @@ static unsigned int PNMInteger(Image *image,const unsigned int base)
         if (LocaleCompare(q,P7Comment) == 0)
           *q='\0';
         /*
+          FIXME:
           Implicitly extend existing comment attribute since comments
           can span multiple lines.
         */
@@ -268,10 +304,57 @@ typedef enum
     XV_332_Format /* P7 332 */
   } PNMSubformat;
 
-#if defined(HAVE_OPENMP) && !defined(DisableSlowOpenMP)
+static const char *PNMSubformatToString(const PNMSubformat f)
+{
+  const char *s = "unknown";
+
+  switch (f)
+    {
+    case Undefined_PNM_Format:
+      s = "Undefined";
+      break;
+    case PBM_ASCII_Format: /* P1 */
+      s = "PBM ASCII";
+      break;
+    case PGM_ASCII_Format: /* P2 */
+      s = "PGM ASCII";
+      break;
+    case PPM_ASCII_Format: /* P3 */
+      s = "PPM ASCII";
+      break;
+    case PBM_RAW_Format: /* P4 */
+      s = "PBM RAW";
+      break;
+    case PGM_RAW_Format: /* P5 */
+      s = "PGM RAW";
+      break;
+    case PPM_RAW_Format: /* P6 */
+      s = "PPM RAW";
+      break;
+    case PAM_Format: /* P7 */
+      s = "PAM";
+      break;
+    case XV_332_Format: /* P7 332 */
+      s = "XV 332 icon";
+      break;
+    }
+  return s;
+}
+
+#if defined(HAVE_OPENMP)
 #  define PNMReadUseOpenMP 1
-#  define PNMReadThreads (Min(2,omp_get_max_threads()))
-#endif
+
+static int PNMReadThreads(const Image* image, const size_t bytes_per_row)
+{
+  const int omp_max_threads = omp_get_max_threads();
+  int threads;
+  ARG_NOT_USED(image);
+  threads=(int)(Min(bytes_per_row/4096U,(size_t) Max(0,omp_max_threads)));
+  if (0 == threads)
+    threads=1;
+  return threads;
+}
+#endif /* defined(HAVE_OPENMP) */
 
 static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
 {
@@ -359,7 +442,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
         case '7':
           {
             if ((ReadBlobByte(image) == ' ') &&
-                (PNMInteger(image,10) == 332))
+                (PNMIntegerOrComment(image,10) == 332))
               format=XV_332_Format;
             else
               format=PAM_Format;
@@ -402,7 +485,11 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 {
                   if (isalnum(c) || ('#' == c))
                     if ((p-keyword) < (MaxTextExtent-1))
-                      *p++=c;
+                      {
+                        *p++=c;
+                        if ('#' == c)
+                          break;
+                      }
                   c=ReadBlobByte(image);
                 } while (isalnum(c) || ('#' == c));
               *p='\0';
@@ -417,7 +504,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 }
               else if (LocaleCompare(keyword,"HEIGHT") == 0)
                 {
-                  image->rows=PNMInteger(image,10);
+                  image->rows=PNMIntegerOrComment(image,10);
                 }
               else if (LocaleCompare(keyword,"WIDTH") == 0)
                 {
@@ -481,7 +568,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 }
               else if (LocaleNCompare(keyword,"#",1) == 0)
                 {
-                  /* Skip white space */
+                  /* Skip leading white space */
                   do
                     {
                       c=ReadBlobByte(image);
@@ -491,13 +578,24 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
                   /* Comment */
                   p=keyword;
-                  do
+                  while ((p-keyword) < (MaxTextExtent-2))
                     {
-                      if ((p-keyword) < (MaxTextExtent-1))
-                        *p++=c;
+                      *p++=c;
                       c=ReadBlobByte(image);
-                    } while (('\n' != c) && (EOF != c));
+                      if (c == '\n')
+                        {
+                          *p++=c;
+                          break;
+                        }
+                      if (c == EOF)
+                        break;
+                    }
                   *p='\0';
+                  /*
+                    FIXME:
+                    Implicitly extend existing comment attribute since comments
+                    can span multiple lines.
+                  */
                   (void) SetImageAttribute(image,"comment",keyword);
                   (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                                         "Comment: \"%s\"",keyword);
@@ -527,7 +625,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
             4 4
             15
           */
-          image->columns=PNMInteger(image,10);
+          image->columns=PNMIntegerOrComment(image,10);
           image->rows=PNMInteger(image,10);
 
           if ((format == PBM_ASCII_Format) || (format == PBM_RAW_Format))
@@ -594,7 +692,8 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
         ThrowException(exception,CorruptImageError,UnexpectedEndOfFile,
                        image->filename);
 
-      if ((1 == samples_per_pixel) && (max_value < MaxColormapSize))
+      if ((1 == samples_per_pixel) && (max_value < MaxColormapSize) &&
+          ((size_t) image->columns*image->rows >= max_value))
         {
           image->storage_class=PseudoClass;
           image->colors=
@@ -659,6 +758,8 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
             register PixelPacket
               *q;
 
+            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                  "Reading %s pixel data",PNMSubformatToString(format));
             for (y=0; y < (long) image->rows; y++)
               {
                 q=SetImagePixels(image,0,y,image->columns,1);
@@ -710,6 +811,8 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
               is_grayscale,
               is_monochrome;
 
+            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                  "Reading %s pixel data",PNMSubformatToString(format));
             is_grayscale=MagickTrue;
             is_monochrome=MagickTrue;
             for (y=0; y < (long) image->rows; y++)
@@ -787,6 +890,8 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
               is_grayscale,
               is_monochrome;
 
+            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                  "Reading %s pixel data",PNMSubformatToString(format));
             is_grayscale=MagickTrue;
             is_monochrome=MagickTrue;
             for (y=0; y < (long) image->rows; y++)
@@ -867,12 +972,13 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
             unsigned int
               sample_max;
 
-#if defined(HAVE_OPENMP) && !defined(DisableSlowOpenMP)
+#if defined(HAVE_OPENMP)
             int
-              pnm_read_threads = PNMReadThreads;
+              pnm_read_threads;
 #endif
 
-            (void) LogMagickEvent(CoderEvent,GetMagickModule(),"Reading PAM");
+            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                  "Reading %s pixel data",PNMSubformatToString(format));
 
             ImportPixelAreaOptionsInit(&import_options);
 
@@ -1016,6 +1122,13 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
                   }
               }
 
+#if defined(HAVE_OPENMP)
+            pnm_read_threads = PNMReadThreads(image,bytes_per_row);
+            if (image->logging)
+              (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                    "Using %d thread%s...", pnm_read_threads,
+                                    pnm_read_threads > 1 ? "s" : "");
+#endif
             scanline_set=AllocateThreadViewDataArray(image,exception,bytes_per_row,1);
             if (scanline_set == (ThreadViewDataSet *) NULL)
               ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
@@ -1663,7 +1776,7 @@ static unsigned int WritePNMImage(const ImageInfo *image_info,Image *image)
 
             value=(depth <=8 ? 255U : depth <= 16 ? 65535U : 4294967295U);
 
-            j += sprintf(&buffer[j],"%u\n",value);
+            j += snprintf(&buffer[j],(sizeof(buffer)-j),"%u\n",value);
             for (y=0; y < image->rows; y++)
               {
                 p=AcquireImagePixels(image,0,y,image->columns,1,&image->exception);
@@ -1688,12 +1801,12 @@ static unsigned int WritePNMImage(const ImageInfo *image_info,Image *image)
                     else if (depth <= 16)
                       {
                         value=ScaleQuantumToShort(index);
-                        j += sprintf(&buffer[j]," %u",value);
+                        j += snprintf(&buffer[j],(sizeof(buffer)-j)," %u",value);
                       }
                     else
                       {
                         value=ScaleQuantumToLong(index);
-                        j += sprintf(&buffer[j]," %u",value);
+                        j += snprintf(&buffer[j],(sizeof(buffer)-j)," %u",value);
                       }
 
                     i++;
@@ -1753,7 +1866,7 @@ static unsigned int WritePNMImage(const ImageInfo *image_info,Image *image)
 
             value=(depth <=8 ? 255U : (depth <= 16 ? 65535U : 4294967295U));
 
-            j += sprintf(&buffer[j],"%u\n",value);
+            j += snprintf(&buffer[j],(sizeof(buffer)-j),"%u\n",value);
             for (y=0; y < image->rows; y++)
               {
                 p=AcquireImagePixels(image,0,y,image->columns,1,&image->exception);
@@ -1779,14 +1892,14 @@ static unsigned int WritePNMImage(const ImageInfo *image_info,Image *image)
                       }
                     else if (depth <= 16)
                       {
-                        j += sprintf(&buffer[j],"%u %u %u ",
+                        j += snprintf(&buffer[j],(sizeof(buffer)-j),"%u %u %u ",
                                      ScaleQuantumToShort(p->red),
                                      ScaleQuantumToShort(p->green),
                                      ScaleQuantumToShort(p->blue));
                       }
                     else
                       {
-                        j += sprintf(&buffer[j],"%u %u %u ",
+                        j += snprintf(&buffer[j],(sizeof(buffer)-j),"%u %u %u ",
                                      (unsigned int) ScaleQuantumToLong(p->red),
                                      (unsigned int) ScaleQuantumToLong(p->green),
                                      (unsigned int) ScaleQuantumToLong(p->blue));
@@ -2205,6 +2318,6 @@ static unsigned int WritePNMImage(const ImageInfo *image_info,Image *image)
   if (image_info->adjoin)
     while (image->previous != (Image *) NULL)
       image=image->previous;
-  CloseBlob(image);
-  return(True);
+  status &= CloseBlob(image);
+  return(status);
 }

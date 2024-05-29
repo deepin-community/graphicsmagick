@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2022 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -5889,7 +5889,7 @@ static MagickPassFail funcDCM_RescaleType(Image *image,DicomStream *dcm,Exceptio
       return MagickFail;
     }
 
-  if (strncmp((char *) dcm->data,"OD",2) == 0)
+  if (strncmp((char *) dcm->data,"OF",2) == 0)
     dcm->rescale_type=DCM_RT_OPTICAL_DENSITY;
   else if (strncmp((char *) dcm->data,"HU",2) == 0)
     dcm->rescale_type=DCM_RT_HOUNSFIELD;
@@ -6150,7 +6150,7 @@ static MagickPassFail DCM_ReadElement(Image *image, DicomStream *dcm,ExceptionIn
             2) element vr is set as "xs" ie is not of a fixed type
           */
           use_explicit=True;
-          strcpy(implicit_vr,explicit_vr);
+          strlcpy(implicit_vr,explicit_vr,sizeof(implicit_vr));
         }
     }
   if ((!use_explicit) || (strcmp(implicit_vr,"!!") == 0))
@@ -7360,7 +7360,7 @@ static MagickPassFail DCM_ReadNonNativeImages(Image **image,const ImageInfo *ima
               }
           if (status == MagickPass)
             {
-              strcpy(next_image->filename,(*image)->filename);
+              strlcpy(next_image->filename,(*image)->filename,sizeof(next_image->filename));
               next_image->scene=scene;
               if (image_list == (Image*)NULL)
                 image_list=next_image;
@@ -7370,7 +7370,9 @@ static MagickPassFail DCM_ReadNonNativeImages(Image **image,const ImageInfo *ima
           else if (next_image != (Image *) NULL)
             {
               DestroyImage(next_image);
+#if !defined(__COVERITY__) /* 384799 Unused value */
               next_image=(Image *) NULL;
+#endif /* if !defined(__COVERITY__) */
             }
         }
       (void) LiberateTemporaryFile(filename);

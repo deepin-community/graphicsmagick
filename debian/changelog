@@ -1,8 +1,107 @@
-graphicsmagick (1.4+really1.3.38-1) UNRELEASED; urgency=medium
+graphicsmagick (1.4+really1.3.43-1) unstable; urgency=high
 
-  * update
+  * New upstream release, including many security fixes.
+  * Update library symbols for this release.
 
- -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 13 Jun 2022 02:44:34 -0400
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 24 Mar 2024 20:46:14 +0100
+
+graphicsmagick (1.4+really1.3.42-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.  Closes: #1063117
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 01 Mar 2024 12:05:32 +0000
+
+graphicsmagick (1.4+really1.3.42-1) unstable; urgency=high
+
+  * New upstream release, including many security fixes.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 24 Sep 2023 16:35:56 +0200
+
+graphicsmagick (1.4+really1.3.41-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Use binary-targets for Rules-Requires-Root (closes: #1011774).
+  * Update Standards-Version to 4.6.2 .
+  * Update library symbols for this release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 15 Aug 2023 17:33:11 +0200
+
+graphicsmagick (1.4+really1.3.40-4) unstable; urgency=medium
+
+  * Remove development ifdef from memory leak fix.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 17 Apr 2023 19:17:10 +0200
+
+graphicsmagick (1.4+really1.3.40-3) unstable; urgency=high
+
+  * Backport security fixes:
+    - MIFF reader able to provide attribute data in way which results in
+      a heap overflow,
+    - SetImageAttribute(): eliminate memory leak when handling attribute
+      with key "EXIF:Orientation".
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 16 Apr 2023 14:21:32 +0200
+
+graphicsmagick (1.4+really1.3.40-2) unstable; urgency=medium
+
+  * Don't force tiff dependency, let shlibs handle it (closes: #1029212).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 19 Jan 2023 19:44:45 +0100
+
+graphicsmagick (1.4+really1.3.40-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update Standards-Version to 4.6.1 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 15 Jan 2023 08:33:55 +0100
+
+graphicsmagick (1.4+really1.3.39-2) unstable; urgency=medium
+
+  * Backport security fix WritePCXImage(): Fix heap overflow when writing
+    more than 1023 scenes, and also eliminate use of uninitialized memory.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 30 Dec 2022 23:25:30 +0100
+
+graphicsmagick (1.4+really1.3.39-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Enable JPEG XL format support (closes: #1026220).
+  * Migrate gsfonts dependencies to fonts-urw-base35 (closes: #1020373).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 27 Dec 2022 08:32:14 +0100
+
+graphicsmagick (1.4+really1.3.38+hg16870-1) unstable; urgency=high
+
+  * Mercurial snapshot, fixing several security issues.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 11 Dec 2022 07:59:31 +0100
+
+graphicsmagick (1.4+really1.3.38+hg16739-1) unstable; urgency=high
+
+  * Mercurial snapshot, fixing the following security issue:
+    - ReadSVGImage(): null pointer dereference by checking return from
+      xmlCreatePushParserCtxt() .
+  * Restore non-const Image::colorMapSize() since it caused an ABI change
+    (closes: #1019158).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 06 Sep 2022 18:30:49 +0200
+
+graphicsmagick (1.4+really1.3.38+hg16728-1) unstable; urgency=high
+
+  * Mercurial snapshot, fixing the following security issues:
+    - ThrowLoggedException(): dereference after NULL check,
+    - ReadJP2Image(): division by float zero,
+    - MagickXMakeMagnifyImage(): division by zero,
+    - ScaleImage(): resource leak,
+    - GetLocaleMessageFromTag(): out of bounds read,
+    - DrawPrimitive(): out of bounds access,
+    - ReadOnePNGImage(): use of uninitialized value,
+    - ReadMNGImage(): heap use after free in CloseBlob(),
+    - ReadMNGImage(): indirect leak,
+    - ReadOnePNGImage(): indirect leak in MagickMallocCleared().
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 11 Aug 2022 23:50:27 +0200
 
 graphicsmagick (1.4+really1.3.38-1) unstable; urgency=high
 

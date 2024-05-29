@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2019 GraphicsMagick Group
+% Copyright (C) 2003-2022 GraphicsMagick Group
 % Copyright (C) 2003 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -353,7 +353,7 @@ MagickExport Image *AllocateImage(const ImageInfo *image_info)
   /*
     Initialize Image structure.
   */
-  (void) strcpy(allocate_image->magick,"MIFF");
+  (void) strlcpy(allocate_image->magick,"MIFF",sizeof(allocate_image->magick));
   allocate_image->storage_class=DirectClass;
   allocate_image->depth=QuantumDepth;
   allocate_image->interlace=NoInterlace;
@@ -361,12 +361,9 @@ MagickExport Image *AllocateImage(const ImageInfo *image_info)
   allocate_image->compose=OverCompositeOp;
   allocate_image->blur=1.0;
   GetExceptionInfo(&allocate_image->exception);
-  (void) QueryColorDatabase(BackgroundColor,&allocate_image->background_color,
-    &allocate_image->exception);
-  (void) QueryColorDatabase(BorderColor,&allocate_image->border_color,
-    &allocate_image->exception);
-  (void) QueryColorDatabase(MatteColor,&allocate_image->matte_color,
-    &allocate_image->exception);
+  BackgroundColorInit(&allocate_image->background_color);
+  BorderColorInit(&allocate_image->border_color);
+  MatteColorInit(&allocate_image->matte_color);
   allocate_image->orientation=UndefinedOrientation;
   GetTimerInfo(&allocate_image->timer);
   GetCacheInfo(&allocate_image->cache);
@@ -1086,7 +1083,7 @@ MagickExport MagickPassFail CompositePathImage(Image *image,const char *pathname
 %    o rows: The number of rows in the cloned image.
 %
 %    o orphan:  With a value other than 0, the cloned image is an orphan.  An
-%      orphan is a stand-alone image that is not assocated with an image list.
+%      orphan is a stand-alone image that is not associated with an image list.
 %      In effect, the next and previous members of the cloned image is set to
 %      NULL.
 %
@@ -1684,7 +1681,7 @@ MagickExport unsigned int DisplayImages(const ImageInfo *image_info,
 %
 %      Image *GetImageClipMask(const Image *image, ExceptionInfo *exception)
 %
-%  A descripton of each parameter follows:
+%  A description of each parameter follows:
 %
 %    o image: The image.
 %
@@ -1734,7 +1731,7 @@ MagickExport Image *GetImageClipMask(const Image *image, ExceptionInfo *exceptio
 %
 %      Image *GetImageCompositeMask(const Image *image, ExceptionInfo *exception)
 %
-%  A descripton of each parameter follows:
+%  A description of each parameter follows:
 %
 %    o image: The image.
 %
@@ -1944,10 +1941,9 @@ MagickExport void GetImageInfo(ImageInfo *image_info)
   image_info->dither=True;
   image_info->progress=True;
   GetExceptionInfo(&exception);
-  (void) QueryColorDatabase(BackgroundColor,&image_info->background_color,
-    &exception);
-  (void) QueryColorDatabase(BorderColor,&image_info->border_color,&exception);
-  (void) QueryColorDatabase(MatteColor,&image_info->matte_color,&exception);
+  BackgroundColorInit(&image_info->background_color);
+  BorderColorInit(&image_info->border_color);
+  MatteColorInit(&image_info->matte_color);
   DestroyExceptionInfo(&exception);
   image_info->signature=MagickSignature;
 }
@@ -2700,6 +2696,10 @@ MagickExport MagickPassFail SetImageDepth(Image *image,const unsigned long depth
   MagickPassFail
     status=MagickPass;
 
+  MagickBool
+    is_monochrome = image->is_monochrome,
+    is_grayscale = image->is_grayscale;
+
   assert(image != (Image *) NULL);
 
   status=QuantumOperatorImage(image,AllChannels,DepthQuantumOp,(double) depth,
@@ -2708,6 +2708,8 @@ MagickExport MagickPassFail SetImageDepth(Image *image,const unsigned long depth
     status=QuantumOperatorImage(image,OpacityChannel,DepthQuantumOp,(double) depth,
                                 &image->exception);
   image->depth=Min(depth,QuantumDepth);
+  image->is_monochrome = is_monochrome;
+  image->is_grayscale = is_grayscale;
   return status;
 }
 
@@ -3034,7 +3036,7 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
   assert(image_info->signature == MagickSignature);
 
   /*
-    Ensure backward compatiblity with previous flags which used
+    Ensure backward compatibility with previous flags which used
     True/False logic.
   */
   lflags=flags;
@@ -3098,13 +3100,13 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
           format[p-image_info->filename]='\0';
 
           /*
-            Backward compatability and interoperability namimg
+            Backward compatibility and interoperability namimg
           */
           if (LocaleCompare(format,"GRADATION") == 0)
-            (void) strcpy(format,"GRADIENT");
+            (void) strlcpy(format,"GRADIENT",sizeof(format));
 
           if (LocaleCompare(format,"MAGICK") == 0)
-            (void) strcpy(format,"IMAGE");
+            (void) strlcpy(format,"IMAGE",sizeof(format));
 
           LocaleUpper(format);
           /*
@@ -3118,7 +3120,7 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
               char base_filename[MaxTextExtent];
               p++;
               (void) strlcpy(base_filename,p,MaxTextExtent);
-              (void) strcpy(image_info->filename,base_filename);
+              (void) strlcpy(image_info->filename,base_filename,MaxTextExtent);
               (void) strlcpy(magic,format,MaxTextExtent);
               (void) strlcpy(image_info->magick,magic,MaxTextExtent);
               if (LocaleCompare(magic,"TMP") != 0)
@@ -3134,14 +3136,20 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
   */
   if (*magic == '\0')
     {
+      MagickBool
+        compressed_extension = MagickFalse;
+
       /* Restore p to end of modified filename */
       p=image_info->filename+Max((long) strlen(image_info->filename)-1,0);
 
       while ((*p != '.') && (p > (image_info->filename+1)))
         p--;
+
       if ((LocaleCompare(p,".gz") == 0) ||
-          (LocaleCompare(p,".Z") == 0) ||
           (LocaleCompare(p,".bz2") == 0))
+        compressed_extension = MagickTrue;
+
+      if (compressed_extension)
         do
           {
             p--;
@@ -3197,7 +3205,22 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
           magick_info=GetMagickInfo(magic,exception);
           if (magick_info != (const MagickInfo *) NULL)
             {
-              if (magick_info->extension_treatment == IgnoreExtensionTreatment)
+              /*
+                For compressed files with expected extensions
+                (e.g. name.ext.gz) we have already deduced the
+                expected format based on the base file extension, and
+                if the extension is considered to be a good hint, and
+                if seekable_stream is false for that format, use
+                "affirm" in order to avoid using a temporary file.
+              */
+              if (LocaleCompare(magick_info->name,"SVGZ") == 0)
+                compressed_extension = MagickTrue;
+
+              if ((magick_info->extension_treatment == HintExtensionTreatment) &&
+                  (magick_info->seekable_stream == MagickFalse) &&
+                  (compressed_extension))
+                image_info->affirm=MagickTrue;
+              else if (magick_info->extension_treatment == IgnoreExtensionTreatment)
                 exclude=MagickTrue;
               else if (magick_info->extension_treatment == ObeyExtensionTreatment)
                 image_info->affirm=MagickTrue;
@@ -3226,6 +3249,9 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
           DestroyImage(image);
           return(MagickFail);
         }
+      /*
+        FIXME: Avoid creating temporary files unless absolutely necessary!
+      */
       if (!BlobIsSeekable(image))
         {
           /*
@@ -3245,7 +3271,7 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
               return(MagickFail);
             }
           CloseBlob(image);
-          (void) strcpy(image->filename,filename);
+          (void) strlcpy(image->filename,filename,MaxTextExtent);
           status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
           if (status == MagickFail)
             {
@@ -3253,7 +3279,7 @@ SetImageInfo(ImageInfo *image_info,const unsigned int flags,
               DestroyImage(image);
               return(MagickFail);
             }
-          (void) strcpy(image_info->filename,filename);
+          (void) strlcpy(image_info->filename,filename,MaxTextExtent);
           image_info->temporary=MagickTrue;
         }
       magick[0]='\0';
@@ -3448,11 +3474,11 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     status = MagickPass;
 
   MagickBool
-    logging;
+    xform_logging;
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickSignature);
-  logging=IsEventLogging();
+  xform_logging=IsEventLogged(TransformEvent);
   switch (image_type)
   {
     case BilevelType:
@@ -3462,7 +3488,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
 
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Bilevel) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
@@ -3481,7 +3507,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
               /*
                 Threshold image to bilevel
               */
-              if (logging)
+              if (xform_logging)
                 (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                       "SetImageType(Bilevel) Smashing to bilevel using Threshold method ...");
               (void) ThresholdImage(image,(double)MaxRGB/2);
@@ -3498,7 +3524,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
           quantize_info.dither=image->dither;
           quantize_info.tree_depth=8;
           quantize_info.number_colors=2;
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Bilevel) Dithering to bilevel using Quantize method ...");
           (void) QuantizeImage(&quantize_info,image);
@@ -3512,14 +3538,14 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Grayscale) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
         }
       if (!image->is_grayscale)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Grayscale) Transforming to gray colorspace ...");
           (void) TransformColorspace(image,GRAYColorspace);
@@ -3532,21 +3558,21 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(GrayscaleMatte) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
         }
       if (!image->is_grayscale)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(GrayscaleMatte) Transforming to gray colorspace ...");
           (void) TransformColorspace(image,GRAYColorspace);
         }
       if (!image->matte)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(GrayscaleMatte) Adding opaque matte channel ...");
           SetImageOpacity(image,OpaqueOpacity);
@@ -3559,14 +3585,14 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Palette) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
         }
       if (image->storage_class != PseudoClass)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(Palette) Using Quantize method ...");
           GetQuantizeInfo(&quantize_info);
@@ -3579,21 +3605,21 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(PaletteMatte) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
         }
       if (!image->matte)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(PaletteMatte) Adding opaque matte channel ...");
           SetImageOpacity(image,OpaqueOpacity);
         }
       if (image->storage_class != PseudoClass)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(PaletteMatteType) Using Quantize method ...");
           GetQuantizeInfo(&quantize_info);
@@ -3607,7 +3633,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(TrueColor) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
@@ -3620,7 +3646,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
 
       if (!IsRGBColorspace(image->colorspace))
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(TrueColorMatte) Transforming to RGB colorspace ...");
           (void) TransformColorspace(image,RGBColorspace);
@@ -3628,7 +3654,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
       image->storage_class=DirectClass;
       if (!image->matte)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(TrueColorMatte) Adding opaque matte channel ...");
           SetImageOpacity(image,OpaqueOpacity);
@@ -3639,7 +3665,7 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (image->colorspace != CMYKColorspace)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(ColorSeparation) Transforming to CMYK colorspace ...");
           (void) TransformColorspace(image,CMYKColorspace);
@@ -3650,14 +3676,14 @@ MagickExport MagickPassFail SetImageType(Image *image,const ImageType image_type
     {
       if (image->colorspace != CMYKColorspace)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(ColorSeparationMatte) Transforming to CMYK colorspace ...");
           (void) TransformColorspace(image,CMYKColorspace);
         }
       if (!image->matte)
         {
-          if (logging)
+          if (xform_logging)
             (void) LogMagickEvent(TransformEvent,GetMagickModule(),
                                   "SetImageType(ColorSeparationMatte) Adding opaque matte channel ...");
           SetImageOpacity(image,OpaqueOpacity);

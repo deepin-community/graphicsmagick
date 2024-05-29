@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2022 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -389,7 +389,7 @@ ImportRLEPixels(Image *image,
                       quantum|=((unsigned int) *p++);
                       pixel.red=ScaleShortToQuantum(quantum);
                       quantum= ((unsigned int) *p++ << 8);
-                      quantum|=(*p++);
+                      quantum|=((unsigned int) *p++);
                       pixel.green=ScaleShortToQuantum(quantum);
                       quantum =((unsigned int) *p++ << 8);
                       quantum|=((unsigned int) *p++);
@@ -752,6 +752,25 @@ do { \
 
 #define ReadMIFFMaxKeyWordCount 256 /* Arbitrary limit on keywords in one MIFF frame */
 
+/*
+  Ignore attempts to set the same attribute multiple times.
+*/
+static MagickPassFail
+SetNewImageAttribute(Image *image,const char *key,const char *value)
+{
+  MagickPassFail
+    status;
+
+  status = SetImageAttribute(image,key,value);
+
+  if (GetImageAttribute(image,key) == (const ImageAttribute *) NULL)
+    status = SetImageAttribute(image,key,value);
+  else
+    status = MagickFail;
+
+  return status;
+};
+
 static Image *ReadMIFFImage(const ImageInfo *image_info,
   ExceptionInfo *exception)
 {
@@ -926,7 +945,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
               image);
           *p='\0';
           (void) LogMagickEvent(CoderEvent,GetMagickModule(),"Comment: \"%s\"", comment);
-          (void) SetImageAttribute(image,"comment",comment);
+          (void) SetNewImageAttribute(image,"comment",comment);
           comment_count++;
           MagickFreeResourceLimitedMemory(comment);
           c=ReadBlobByte(image);
@@ -969,7 +988,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
               Get values.
 
               Values not containing spaces are terminated by the first
-              white-space (or new-line) enountered.  Values containing
+              white-space (or new-line) encountered.  Values containing
               spaces and/or new-lines must be surrounded by braces.
             */
             values_length=MaxTextExtent;
@@ -1060,7 +1079,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       exception);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1087,7 +1106,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       ThrowMIFFReaderException(CorruptImageError,ImproperImageHeader,image);
                     i=number_of_profiles;
                     new_profiles=MagickReallocateResourceLimitedArray(ProfileInfo *,profiles,
-                                                                      number_of_profiles+1,sizeof(ProfileInfo));
+                                                                     (size_t)number_of_profiles+1,sizeof(ProfileInfo));
                     if (new_profiles == (ProfileInfo *) NULL)
                       ThrowMIFFReaderException(ResourceLimitError,MemoryAllocationFailed,image);
                     profiles=new_profiles;
@@ -1135,7 +1154,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->columns= MagickAtoL(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1165,7 +1184,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                           image->dispose=PreviousDispose;
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1184,7 +1203,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       &image->chromaticity.green_primary.y);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1201,7 +1220,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->iterations=MagickAtoL(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1225,7 +1244,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     (void) CloneString(&image->montage,values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1243,7 +1262,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->orientation=StringToOrientationType(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1271,7 +1290,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       ThrowMIFFReaderException(CorruptImageError,ImproperImageHeader,image);
                     i=number_of_profiles;
                     new_profiles=MagickReallocateResourceLimitedArray(ProfileInfo *,profiles,
-                                                                      number_of_profiles+1,sizeof(ProfileInfo));
+                                                                     (size_t)number_of_profiles+1,sizeof(ProfileInfo));
                     if (new_profiles == (ProfileInfo *) NULL)
                       ThrowMIFFReaderException(ResourceLimitError,MemoryAllocationFailed,image);
                     profiles=new_profiles;
@@ -1281,7 +1300,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     number_of_profiles++;
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1322,7 +1341,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->rows= MagickAtoL(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1334,7 +1353,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     image->scene=MagickAtoL(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1351,7 +1370,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                         image->units=PixelsPerCentimeterResolution;
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1363,7 +1382,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                     version=MagickAtoF(values);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1377,13 +1396,13 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       &image->chromaticity.white_point.y);
                     break;
                   }
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
               default:
               {
-                (void) SetImageAttribute(image,keyword,
+                (void) SetNewImageAttribute(image,keyword,
                   *values == '{' ? values+1 : values);
                 break;
               }
@@ -1549,7 +1568,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
             if (colormap == (unsigned char *) NULL)
               ThrowMIFFReaderException(ResourceLimitError,MemoryAllocationFailed,
                 image);
-            (void) ReadBlob(image,packet_size*image->colors,colormap);
+            (void) ReadBlob(image, (size_t)packet_size*image->colors,colormap);
             p=colormap;
             switch (depth)
               {
@@ -1623,7 +1642,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
         quantum_type=image->matte ? IndexAlphaQuantum : IndexQuantum;
         if (image->colors <= 256)
           quantum_size=8;
-        else if (image->colors <= 65535)
+        else if (image->colors <= 65536)
           quantum_size=16;
         else
           quantum_size=32;
@@ -1840,6 +1859,12 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                         {
                           length=(int) (1.01*pixels_size+600);
                           bzip_info.avail_in=(unsigned int) ReadBlob(image,length,bzip_info.next_in);
+                          if (bzip_info.avail_in == 0)
+                            {
+                              (void) BZ2_bzDecompressEnd(&bzip_info);
+                              ThrowMIFFReaderException(CorruptImageError,UnexpectedEndOfFile,
+                                                   image);
+                            }
                         }
                       else
                         {
@@ -1947,7 +1972,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
               if (q == (PixelPacket *) NULL)
                 break;
               pixels_p=pixels;
-              if (ReadBlobZC(image,packet_size*image->columns,&pixels_p)
+              if (ReadBlobZC(image, (size_t)packet_size*image->columns,&pixels_p)
                   != (size_t) packet_size*image->columns)
                 ThrowMIFFReaderException(CorruptImageError,UnexpectedEndOfFile,
                                          image);
@@ -2451,7 +2476,7 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
       packet_size+=quantum_size/8;
     if (compression == RLECompression)
       packet_size+=quantum_size/8;
-    length=packet_size*image->columns;
+    length= (size_t)packet_size*image->columns;
     pixels=MagickAllocateResourceLimitedMemory(unsigned char *,length);
     length=(size_t) (1.01*packet_size*image->columns+600);
     if ((compression == BZipCompression) || (compression == ZipCompression))
@@ -2511,11 +2536,11 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
         /*
           Set image resolution.
         */
-        (void) strcpy(units,"undefined");
+        (void) strlcpy(units,"undefined",sizeof(units));
         if (image->units == PixelsPerInchResolution)
-          (void) strcpy(units,"pixels-per-inch");
+          (void) strlcpy(units,"pixels-per-inch",sizeof(units));
         if (image->units == PixelsPerCentimeterResolution)
-          (void) strcpy(units,"pixels-per-centimeter");
+          (void) strlcpy(units,"pixels-per-centimeter",sizeof(units));
         FormatString(buffer,"Resolution=%gx%g  units=%.1024s\n",
           image->x_resolution,image->y_resolution,units);
         (void) WriteBlobString(image,buffer);
@@ -2557,26 +2582,26 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
     if (image->dispose != UndefinedDispose)
       {
         if (image->dispose == BackgroundDispose)
-          (void) strcpy(buffer,"dispose=background\n");
+          (void) strlcpy(buffer,"dispose=background\n",sizeof(buffer));
         else
           if (image->dispose == NoneDispose)
-            (void) strcpy(buffer,"dispose=none\n");
+            (void) strlcpy(buffer,"dispose=none\n",sizeof(buffer));
           else
-            (void) strcpy(buffer,"dispose=previous\n");
+            (void) strlcpy(buffer,"dispose=previous\n",sizeof(buffer));
         (void) WriteBlobString(image,buffer);
       }
     if (image->rendering_intent != UndefinedIntent)
       {
         if (image->rendering_intent == SaturationIntent)
-          (void) strcpy(buffer,"rendering-intent=saturation\n");
+          (void) strlcpy(buffer,"rendering-intent=saturation\n",sizeof(buffer));
         else
           if (image->rendering_intent == PerceptualIntent)
-            (void) strcpy(buffer,"rendering-intent=perceptual\n");
+            (void) strlcpy(buffer,"rendering-intent=perceptual\n",sizeof(buffer));
           else
             if (image->rendering_intent == AbsoluteIntent)
-              (void) strcpy(buffer,"rendering-intent=absolute\n");
+              (void) strlcpy(buffer,"rendering-intent=absolute\n",sizeof(buffer));
             else
-              (void) strcpy(buffer,"rendering-intent=relative\n");
+              (void) strlcpy(buffer,"rendering-intent=relative\n",sizeof(buffer));
         (void) WriteBlobString(image,buffer);
       }
     if (image->gamma != 0.0)
@@ -2776,7 +2801,7 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
             }
 #endif /* QuantumDepth > 16 */
           } /* switch (depth) */
-        (void) WriteBlob(image,packet_size*image->colors,colormap);
+        (void) WriteBlob(image, (size_t)packet_size*image->colors,colormap);
         MagickFreeResourceLimitedMemory(colormap);
       }
     /*
@@ -2947,7 +2972,7 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
         default:
         {
           (void) ExportImagePixelArea(image,quantum_type,quantum_size,pixels,0,0);
-          (void) WriteBlob(image,packet_size*image->columns,pixels);
+          (void) WriteBlob(image, (size_t)packet_size*image->columns,pixels);
           break;
         }
       }
@@ -2963,15 +2988,16 @@ static unsigned int WriteMIFFImage(const ImageInfo *image_info,Image *image)
     if (image->next == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=MagickMonitorFormatted(scene++,image_list_length,
-                                  &image->exception,SaveImagesText,
-                                  image->filename);
+    if (status != MagickFail)
+      status=MagickMonitorFormatted(scene++,image_list_length,
+                                    &image->exception,SaveImagesText,
+                                    image->filename);
     if (status == False)
       break;
   } while (image_info->adjoin);
   if (image_info->adjoin)
     while (image->previous != (Image *) NULL)
       image=image->previous;
-  CloseBlob(image);
+  status &= CloseBlob(image);
   return(status);
 }

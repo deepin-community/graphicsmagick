@@ -33,9 +33,9 @@ at http://sourceforge.net/projects/graphicsmagick/files/.
 GraphicsMagick is a continual work in progress. The very latest code
 is available via the Mercurial distributed source control management
 tool (https://www.mercurial-scm.org/). GraphicsMagick may be retrieved
-from OSDN or SourceForge via the following commands:
+from foss.heptapod.net or SourceForge via the following commands:
 
-  hg clone https://hg.osdn.net/view/graphicsmagick/GM GM
+  hg clone https://foss.heptapod.net/graphicsmagick/graphicsmagick GM
 
   hg clone http://hg.code.sf.net/p/graphicsmagick/code/ GM
 
@@ -258,11 +258,12 @@ building under Microsoft Windows:
      http://sourceforge.net/projects/ctrio/
 
   to substitute for the vsnprintf function when the operating system
-  does not provide one. Older operating systems (e.g. Solaris 2.5)
-  may not provide a vsnprintf function. If vsnprintf (or the TRIO
+  does not provide one. Older operating systems (e.g. Solaris 2.5) may
+  not provide a vsnprintf function. If vsnprintf (or the TRIO
   replacement) is not used, then vsprintf is used instead, which
   decreases the security of GraphicsMagick due to possible buffer
-  overrun exploits.
+  overrun exploits.  It is highly unlikely that TRIO is useful on any
+  modern system.
 
 * GraphicsMagick may optionally use the 'tcmalloc' library provided as
   part of Google gperftools available from
@@ -378,10 +379,10 @@ building under Microsoft Windows:
 
     https://github.com/strukturag/libde265
 
-  to read HEIF/h.265 files. Libheif makes use of libde265 for
-  h.265/HEVC decoding and libx265 for encoding.  GraphicsMagick does
-  not itself provide any h.265/HEVC algoriths and it does not
-  currently support encoding.
+  to read HEIF/h.265 files and HEIF/AVIF files. Libheif makes use of
+  libde265 for h.265/HEVC decoding and libx265 for encoding.
+  GraphicsMagick does not itself provide any h.265/HEVC algoriths and
+  it does not currently support encoding.
 
   The HEVC codec is covered by a huge number of patents (the MPEG LA
   HEVC patent list is 164 pages long!).  While GraphicsMagick is
@@ -395,5 +396,6 @@ building under Microsoft Windows:
   entity has paid to allow use of any applicable HEVC patents on their
   device, or that the patents do not apply in their country.
 
-* GraphicsMagick requires the JPEG XL library from
-  https://github.com/libjxl/libjxl to read and write JPEG XL files.
+* GraphicsMagick requires the JPEG XL (JXL) library (release 0.7.0 or
+  later) from https://github.com/libjxl/libjxl to read and write JPEG
+  XL files.

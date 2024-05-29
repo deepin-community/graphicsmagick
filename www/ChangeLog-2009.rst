@@ -515,10 +515,6 @@
 
 2009-09-17  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
-  - version.sh: Released GraphicsMagick 1.3.7.
-
-2009-09-17  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
   - coders/msl.c, doc/conjure.imdoc: Add support for a new `profile`
     command in MSL/conjure which applies, adds, or removes one or more
     IPTC, ICC or generic profiles from a file.  Work contributed by
@@ -802,8 +798,8 @@
 2009-08-08  Glenn Randers-Pehrson <glennrp@simple....>
 
   - coders/png.c: Made compatible with libpng-1.4.0beta74 and later
-        (won't work with libpng-1.4.0beta35 through beta73) due to change
-        in names of png\_struct members "trans" and "trans\_values"). 
+    (won't work with libpng-1.4.0beta35 through beta73) due to change
+    in names of png\_struct members "trans" and "trans\_values"). 
 
 2009-08-08 Fojtik Jaroslav  <JaFojtik@seznam.cz>
   - coders/topol.c: Pallette is ignored for subtype 5 (RGB).
@@ -934,7 +930,7 @@
 2009-07-05  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/cdl.c (CdlImage): New function to apply an ASC CDL
-    transform to the image.  Original implementation by ClÈment Follet
+    transform to the image.  Original implementation by CleÃÅment Follet
     from Workflowers but considerably re-worked by Bob Friesenhahn.
     Available as -asc-cdl via the `convert` and `mogrify` subcommands.
 
@@ -1131,7 +1127,7 @@
     on any number of images.  The algorithm is accessed by the
     -hald-clut option of `convert` and `mogrify`.  The original
     algorithm is by Eskil Steenberg and was adapted for GraphicsMagick
-    by ClÈment Follet from Workflowers with support from CÈdric
+    by Cl√©ment Follet from Workflowers with support from C√©dric
     Lejeune of Workflowers.
 
 2009-06-05  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
@@ -1306,7 +1302,7 @@
 2009-05-22  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/txt.c Fixed char vs int parameter problem.
-        Better detection of too dark 16bit or 32bit images.
+    Better detection of too dark 16bit or 32bit images.
 
 2009-05-22  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

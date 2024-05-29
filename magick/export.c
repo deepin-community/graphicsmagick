@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 - 2018 GraphicsMagick Group
+  Copyright (C) 2003 - 2023 GraphicsMagick Group
   Copyright (C) 2002 ImageMagick Studio
 
   This program is covered by multiple licenses, which are described in
@@ -17,6 +17,7 @@
 #include "magick/bit_stream.h"
 #include "magick/colormap.h"
 #include "magick/constitute.h"
+#include "magick/enum_strings.h"
 #include "magick/floats.h"
 #include "magick/magick.h"
 #include "magick/pixel_cache.h"
@@ -630,6 +631,15 @@ ExportGrayQuantumType(unsigned char * restrict destination,
   register unsigned int
     unsigned_value;
 
+#if 0
+  printf("ExportGrayQuantumType(): storage_class=%s, indexes=%p, colors=%u, number_pixels=%lu,"
+         " quantum_size=%u, sample_type=%s, endian=%s, unsigned_scale=%u, grayscale_miniswhite=%c,"
+         "sample_bits=%u double_minvalue=%g, double_scale=%g\n",
+         ClassTypeToString(image->storage_class), indexes, image->colors,
+         number_pixels, quantum_size, QuantumSampleTypeToString(sample_type), EndianTypeToString(endian),
+         unsigned_scale, grayscale_miniswhite ? 't' : 'f', sample_bits, double_minvalue, double_scale);
+#endif
+
   if (sample_type == UnsignedQuantumSampleType)
     {
       switch (quantum_size)
@@ -637,6 +647,7 @@ ExportGrayQuantumType(unsigned char * restrict destination,
         case 1:
           {
             if ((image->storage_class == PseudoClass) &&
+                (image->colors == 2) &&
                 (indexes != (IndexPacket *) NULL))
               {
                 /*
@@ -3085,7 +3096,6 @@ ExportViewPixelArea(const ViewInfo *view,
     sample_type = UnsignedQuantumSampleType;
 
   unsigned int
-    unsigned_maxvalue=MaxRGB,
     sample_bits;
 
   unsigned long
@@ -3156,9 +3166,6 @@ ExportViewPixelArea(const ViewInfo *view,
   double_scale=(double) (double_maxvalue-double_minvalue)/MaxRGB;
   if ((sample_type != FloatQuantumSampleType) && (sample_bits <= 32U))
     {
-      /* Maximum value which may be represented by a sample */
-      unsigned_maxvalue=MaxValueGivenBits(sample_bits);
-
       if (QuantumDepth == sample_bits)
         {
         }
@@ -3167,11 +3174,16 @@ ExportViewPixelArea(const ViewInfo *view,
           /* Divide to scale down */
           unsigned_scale=(MaxRGB / (MaxRGB >> (QuantumDepth-sample_bits)));
         }
+#if QuantumDepth < 32
       else if (QuantumDepth < sample_bits)
         {
+          /* Maximum value which may be represented by a sample */
+          const unsigned int unsigned_maxvalue=MaxValueGivenBits(sample_bits);
+
           /* Multiply to scale up */
           unsigned_scale=(unsigned_maxvalue/MaxRGB);
         }
+#endif /* #if QuantumDepth < 32 */
     }
 
   image=GetCacheViewImage(view);

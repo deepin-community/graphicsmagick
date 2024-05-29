@@ -14,7 +14,7 @@
 # knows how to both read and write.
 #
 # Whenever a new test is added/removed, be sure to update the
-# 1..n ouput.
+# 1..n output.
 
 BEGIN { $| = 1; $test=1; print "TAP version 13\n1..33\n"; }
 END {print "not ok $test\n" unless $loaded;}
@@ -179,7 +179,7 @@ print("SUN 1-bit Rasterfile ...\n");
 testReadWrite( 'SUN:input.im1',
   'SUN:output.im1',
   q//,
-  '615fa1d8bae486118b3733c1dba4e2a225fc1f4f8ff9441bcb7c3293753e4da1');
+  '86cf46ab9d620aa85eba722d777cc97e30df51916b2380df3cbc2685614d1222');
 
 print("SUN 8-bit Rasterfile ...\n");
 ++$test;
@@ -197,10 +197,10 @@ testReadWrite( 'SUN:input.im24',
 
 print("Truevision Targa image file ...\n");
 ++$test;
-testReadWrite( 'TGA:input.tga',
-  'TGA:output.tga',
+testReadWrite( 'TGA:input_8_CC.tga',
+  'TGA:output_8_CC.tga',
   q//,
-  '8b19185a62241bd7b79ecf3f619711f4ebbedd73eaeca0366f05778762b6614f');
+  '092fa2bb0e2c1826a7b0ac9ea42a788684230623fa56bf0c4c2c9e1d71de8bf1');
 
 print("Khoros Visualization image file ...\n");
 ++$test;

@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003 - 2021 GraphicsMagick Group
+% Copyright (C) 2003 - 2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -62,7 +62,9 @@
 #include "magick/utility.h"
 #if defined(MSWINDOWS)
 #  if defined(__MINGW32__)
-#    define _MSC_VER
+#    if !defined(_MSC_VER)
+#      define _MSC_VER 1200
+#    endif
 #  else
 #    include <win32config.h>
 #  endif
@@ -120,6 +122,9 @@ typedef struct _MSLInfo
 */
 static unsigned int
   WriteMSLImage(const ImageInfo *,Image *);
+
+static void
+MSLError(void *context,const char *format,...) MAGICK_ATTRIBUTE((__format__ (__printf__,2,3)));
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -299,12 +304,20 @@ MSLEntityDeclaration(void *context,const xmlChar *name,int type,
      system_id != (const xmlChar *) NULL ?(char *) system_id : "none",content);
   msl_info=(MSLInfo *) context;
   if (msl_info->parser->inSubset == 1)
-    (void) xmlAddDocEntity(msl_info->document,name,type,public_id,system_id,
-                           content);
+    {
+      if (xmlAddDocEntity(msl_info->document,name,type,public_id,system_id,
+                          content) == (xmlEntityPtr) NULL)
+        MSLError(context, "SAX.entityDecl: xmlAddDocEntity() returned NULL!");
+    }
   else
-    if (msl_info->parser->inSubset == 2)
-      (void) xmlAddDtdEntity(msl_info->document,name,type,public_id,system_id,
-                             content);
+    {
+      if (msl_info->parser->inSubset == 2)
+        {
+          if (xmlAddDtdEntity(msl_info->document,name,type,public_id,system_id,
+                              content) == (xmlEntityPtr) NULL)
+            MSLError(context, "SAX.entityDecl: xmlAddDtdEntity() returned NULL!");
+        }
+    }
 }
 
 static void
@@ -516,11 +529,11 @@ MSLPushImage(MSLInfo *msl_info,Image *image)
   msl_info->n++;
   n=msl_info->n;
   MagickReallocMemory(ImageInfo **,msl_info->image_info,
-                      (n+1)*sizeof(ImageInfo *));
+                      ((size_t)n+1)*sizeof(ImageInfo *));
   MagickReallocMemory(DrawInfo **,msl_info->draw_info,
-                      (n+1)*sizeof(DrawInfo *));
-  MagickReallocMemory(Image **,msl_info->attributes,(n+1)*sizeof(Image *));
-  MagickReallocMemory(Image **,msl_info->image,(n+1)*sizeof(Image *));
+                      ((size_t)n+1)*sizeof(DrawInfo *));
+  MagickReallocMemory(Image **,msl_info->attributes,((size_t)n+1)*sizeof(Image *));
+  MagickReallocMemory(Image **,msl_info->image,((size_t)n+1)*sizeof(Image *));
   if ((msl_info->image_info == (ImageInfo **) NULL) ||
       (msl_info->draw_info == (DrawInfo **) NULL) ||
       (msl_info->attributes == (Image **) NULL) ||
@@ -1170,7 +1183,7 @@ MSLStartElement(void *context,const xmlChar *name,
                   {
                   case ForgetGravity:
                     {
-                      /* do nothing, since we alreay have explicit x,y */
+                      /* do nothing, since we already have explicit x,y */
                       break;
                     }
                   case NorthWestGravity:
@@ -1948,7 +1961,7 @@ MSLStartElement(void *context,const xmlChar *name,
             new_group_info =
               MagickReallocateResourceLimitedClearedArray(MSLGroupInfo *,
                                                           msl_info->group_info,
-                                                          msl_info->nGroups+1,
+                                                          (size_t)msl_info->nGroups+1,
                                                           sizeof(MSLGroupInfo));
             if (new_group_info != (MSLGroupInfo *) NULL)
               {
@@ -3238,14 +3251,19 @@ MSLStartElement(void *context,const xmlChar *name,
                     {
                       if (LocaleCompare(keyword, "opacity") == 0)
                         {
-                          int  opac = OpaqueOpacity;
+                          double opac = 0.0;
                           size_t len = strlen( value );
 
-                          opac = MagickAtoI( value );
-                          if ((opac > 0) && (len > 1) && value[len-1] == '%')
-                            opac = (int)(MaxRGB * ((float)opac/100));
+                          if (MagickAtoFChk( value, &opac ) == MagickFail)
+                            {
+                              ThrowException(msl_info->exception,OptionError,
+                                             UsageError,keyword);
+                              break;
+                            }
+                          if ((opac > 0.0) && (len > 1) && value[len-1] == '%')
+                            opac = (MaxRGBDouble * (opac/100.0));
 
-                          SetImageOpacity( msl_info->image[n], opac );
+                          SetImageOpacity( msl_info->image[n], (unsigned int) opac );
                           break;
                         }
 
@@ -4340,9 +4358,6 @@ MSLWarning(void *context,const char *format,...)
 }
 
 static void
-MSLError(void *context,const char *format,...) MAGICK_ATTRIBUTE((__format__ (__printf__,2,3)));
-
-static void
 MSLError(void *context,const char *format,...)
 {
   char
@@ -4535,7 +4550,7 @@ ProcessMSLScript(const ImageInfo *image_info,Image **image,
     {
       DestroyImage(msl_image);
       ThrowException(exception,FileOpenError,UnableToOpenFile,
-                     msl_image->filename);
+                     image_info->filename);
       return(MagickFail);
     }
 
@@ -4572,7 +4587,20 @@ ProcessMSLScript(const ImageInfo *image_info,Image **image,
   msl_info.image[0]=msl_image;
   if (writer_image != (Image *) NULL)
     MSLPushImage(&msl_info,writer_image);
-  (void) xmlSubstituteEntitiesDefault(1);
+  /*
+    xmlSubstituteEntitiesDefault(1) enables external ENTITY support
+    (e.g. SVGResolveEntity() which allows XML to be downloaded from an
+    external source.  This may be a security hazard if the input is
+    not trustworthy or if connecting to the correct source is not
+    assured. If the XML is parsed on the backside of a firewall then
+    it may be able to access unintended resources.
+
+    See "https://hdivsecurity.com/owasp-xml-external-entities-xxe".
+
+    FIXME: Do we need a way for the user to enable this?  Does
+    retrieval of external entities work at all?
+  */
+  (void) xmlSubstituteEntitiesDefault(0);
 
   (void) memset(&SAXModules,0,sizeof(SAXModules));
   SAXModules.internalSubset=MSLInternalSubset;
@@ -4614,7 +4642,9 @@ ProcessMSLScript(const ImageInfo *image_info,Image **image,
                                           msl_image->filename);
   if (msl_info.parser == (xmlParserCtxtPtr) NULL)
     {
-      /* FIXME: Handle failure! */
+      ThrowException3(exception,ResourceLimitError,
+                      MemoryAllocationFailed,UnableToInterpretMSLImage);
+      goto parser_alloc_failure;
     }
   while (ReadBlobString(msl_image,message) != (char *) NULL)
     {
@@ -4693,6 +4723,8 @@ ProcessMSLScript(const ImageInfo *image_info,Image **image,
           msl_info.n--;
         }
     }
+
+ parser_alloc_failure:
 
   /*
     FIXME: May also need to handle group destruction similar to in
@@ -4881,7 +4913,7 @@ static unsigned int WriteMSLImage(const ImageInfo *image_info,Image *image)
   if (status == MagickFail)
     (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                           "ProcessMSLScript() returned MagickFail!");
-  CloseBlob(image);
+  status &= CloseBlob(image);
   return status;
 }
 #endif /* defined(HasXML) */

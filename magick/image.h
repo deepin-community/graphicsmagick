@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 - 2019 GraphicsMagick Group
+  Copyright (C) 2003 - 2023 GraphicsMagick Group
   Copyright (C) 2002 ImageMagick Studio
   Copyright 1991-1999 E. I. du Pont de Nemours and Company
 
@@ -30,17 +30,6 @@ extern "C" {
 #if !defined(QuantumDepth)
 #  define QuantumDepth  16
 #endif
-
-/*
-  Maximum unsigned RGB value which fits in the specified bits
-
-  If bits <= 0, then zero is returned.  If bits exceeds bits in unsigned long,
-  then max value of unsigned long is returned.
-*/
-#define MaxValueGivenBits(bits) ((unsigned long) \
-                                 (((int) bits <= 0) ? 0 :               \
-                                   ((0x01UL << (Min(sizeof(unsigned long)*8U,(size_t)bits)-1)) + \
-                                    ((0x01UL << (Min(sizeof(unsigned long)*8U,(size_t)bits)-1))-1))))
 
 #if (QuantumDepth == 8)
 #  define MaxColormapSize  256U
@@ -91,7 +80,7 @@ extern "C" {
 #elif (QuantumDepth == 32)
 #  define MaxColormapSize  65536U
 #  define MaxRGB  4294967295U
-#  define MaxRGBFloat 4294967295.0f
+#  define MaxRGBFloat 4294967295.0 /* 4294967295.0f is represented as 4294967296! */
 #  define MaxRGBDouble 4294967295.0
 #  define ScaleCharToQuantum(value)    ((Quantum) (16843009U*(value)))
 #  define ScaleLongToQuantum(value)    ((Quantum) ((value)))
@@ -137,6 +126,8 @@ typedef unsigned int Quantum;
 #define TransparentOpacity  MaxRGB
 #define RoundDoubleToQuantum(value) ((Quantum) (value < 0.0 ? 0U : \
   (value > MaxRGBDouble) ? MaxRGB : value + 0.5))
+#define RoundDoubleToQuantumN(value) ((Quantum) (MAGICK_ISNAN(value) ? 0U : \
+  (value < 0.0 ? 0U : (value > MaxRGBDouble) ? MaxRGB : value + 0.5)))
 #define RoundFloatToQuantum(value) ((Quantum) (value < 0.0f ? 0U : \
   (value > MaxRGBFloat) ? MaxRGB : value + 0.5f))
 #define ConstrainToRange(min,max,value) (value < min ? min :    \
@@ -850,7 +841,7 @@ typedef struct _Image
   unsigned int
     is_monochrome,      /* Private, True if image is known to be monochrome */
     is_grayscale,       /* Private, True if image is known to be grayscale */
-    taint;              /* Private, True if image has not been modifed */
+    taint;              /* Private, True if image has not been modified */
 
   /*
     Allow for expansion of Image without increasing its size.  The

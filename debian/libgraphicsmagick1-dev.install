@@ -8,5 +8,3 @@ usr/include/GraphicsMagick/magick/
 usr/include/GraphicsMagick/wand/
 usr/lib/pkgconfig/GraphicsMagick.pc
 usr/lib/pkgconfig/GraphicsMagickWand.pc
-usr/share/man/man1/GraphicsMagick-config.1
-usr/share/man/man1/GraphicsMagickWand-config.1

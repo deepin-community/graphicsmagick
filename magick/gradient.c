@@ -60,7 +60,7 @@
 %  image.
 %
 %  Note, the interface of this method will change in the future to support
-%  more than one transistion.
+%  more than one transition.
 %
 %  The format of the GradientImage method is:
 %
@@ -189,7 +189,13 @@ MagickExport MagickPassFail GradientImage(Image *restrict image,
     ThrowBinaryException(ResourceLimitError,MemoryAllocationFailed,
                          image->filename);
   if (span <= MaxColormapSize)
-    AllocateImageColormap(image,(unsigned long) span);
+    if (!AllocateImageColormap(image,(unsigned long) span))
+      {
+        MagickFreeMemory(pixel_packets);
+        ThrowException3(&image->exception, ResourceLimitError,MemoryAllocationFailed,
+                        UnableToConstituteImage);
+        return MagickFail;
+      }
 
   /*
     Generate gradient pixels using alpha blending
