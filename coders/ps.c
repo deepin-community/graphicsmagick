@@ -241,6 +241,10 @@ static Image *ReadPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
       for (i=0; i < (long) (count-12); i++)
         (void) ReadBlobByte(image);
     }
+  bounds.x1=0.0;
+  bounds.y1=0.0;
+  bounds.x2=0.0;
+  bounds.y2=0.0;
   p=command;
   for (i=0; (LocaleCompare(image_info->magick,"EPT") != 0) ||
     (i < (long) filesize); i++)
@@ -1661,6 +1665,6 @@ static unsigned int WritePSImage(const ImageInfo *image_info,Image *image)
       (void) WriteBlobString(image,buffer);
     }
   (void) WriteBlobString(image,"%%EOF\n");
-  CloseBlob(image);
-  return(True);
+  status &= CloseBlob(image);
+  return(status);
 }

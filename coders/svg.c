@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -49,7 +49,9 @@
 #if defined(HasXML)
 #  if defined(MSWINDOWS)
 #    if defined(__MINGW32__)
-#      define _MSC_VER
+#      if !defined(_MSC_VER)
+#        define _MSC_VER 1200
+#      endif
 #    else
 #      include <win32config.h>
 #    endif
@@ -60,12 +62,8 @@
 #  include <libxml/xmlerror.h>
 #endif
 
-/*
-  Disable SVG writer by default since it rarely works correctly.
-*/
-#if !defined(ENABLE_SVG_WRITER)
-#  define ENABLE_SVG_WRITER 0
-#endif /* if !defined(ENABLE_SVG_WRITER) */
+/* Enable support for XML internal subset */
+#define ENABLE_XML_INTERNAL_SUBSET 1
 
 /*
   Avoid shadowing library globals and functions.
@@ -180,10 +178,10 @@ typedef struct _SVGInfo
 /*
   Forward declarations.
 */
-#if ENABLE_SVG_WRITER
+#if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER
 static unsigned int
   WriteSVGImage(const ImageInfo *,Image *);
-#endif /* if ENABLE_SVG_WRITER */
+#endif /* if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER */
 
 #if defined(HasXML)
 /*
@@ -492,13 +490,17 @@ extern "C" {
 
   static int SVGIsStandalone(void *context);
 
+#if defined(ENABLE_XML_INTERNAL_SUBSET)
   static int SVGHasInternalSubset(void *context);
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
 
   static int SVGHasExternalSubset(void *context);
 
+#if defined(ENABLE_XML_INTERNAL_SUBSET)
   static void SVGInternalSubset(void *context,const xmlChar *name,
                                 const xmlChar *external_id,
                                 const xmlChar *system_id);
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
 
   static xmlParserInputPtr SVGResolveEntity(void *context,
                                             const xmlChar *public_id,
@@ -585,6 +587,7 @@ SVGIsStandalone(void *context)
   return(svg_info->document->standalone == 1);
 }
 
+#if defined(ENABLE_XML_INTERNAL_SUBSET) && ENABLE_XML_INTERNAL_SUBSET
 static int
 SVGHasInternalSubset(void *context)
 {
@@ -599,6 +602,7 @@ SVGHasInternalSubset(void *context)
   svg_info=(SVGInfo *) context;
   return(svg_info->document->intSubset != NULL);
 }
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
 
 static int
 SVGHasExternalSubset(void *context)
@@ -615,6 +619,8 @@ SVGHasExternalSubset(void *context)
   return(svg_info->document->extSubset != NULL);
 }
 
+#if defined(ENABLE_XML_INTERNAL_SUBSET) && ENABLE_XML_INTERNAL_SUBSET
+/* FIXME: Parser context allocation/handling is apparently wrong for internal subset */
 static void
 SVGInternalSubset(void *context,const xmlChar *name,
                   const xmlChar *external_id,const xmlChar *system_id)
@@ -623,7 +629,7 @@ SVGInternalSubset(void *context,const xmlChar *name,
     *svg_info;
 
   /*
-    Does this document has an internal subset?
+    Create an internal subset (svg_info->document->intSubset)
   */
   (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                         "  SAX.internalSubset(%.1024s, %.1024s, %.1024s)",(char *) name,
@@ -632,6 +638,7 @@ SVGInternalSubset(void *context,const xmlChar *name,
   svg_info=(SVGInfo *) context;
   (void) xmlCreateIntSubset(svg_info->document,name,external_id,system_id);
 }
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
 
 static xmlParserInputPtr
 SVGResolveEntity(void *context,
@@ -705,12 +712,20 @@ SVGEntityDeclaration(void *context,const xmlChar *name,int type,
                         system_id != (xmlChar *) NULL ? (char *) system_id : "none",content);
   svg_info=(SVGInfo *) context;
   if (svg_info->parser->inSubset == 1)
-    (void) xmlAddDocEntity(svg_info->document,name,type,public_id,system_id,
-                           content);
+    {
+      if (xmlAddDocEntity(svg_info->document,name,type,public_id,system_id,
+                          content) == (xmlEntityPtr) NULL)
+        SVGError(context, "SAX.entityDecl: xmlAddDocEntity() returned NULL!");
+    }
   else
-    if (svg_info->parser->inSubset == 2)
-      (void) xmlAddDtdEntity(svg_info->document,name,type,public_id,system_id,
-                             content);
+    {
+      if (svg_info->parser->inSubset == 2)
+        {
+          if (xmlAddDtdEntity(svg_info->document,name,type,public_id,system_id,
+                              content) == (xmlEntityPtr) NULL)
+            SVGError(context, "SAX.entityDecl: xmlAddDtdEntity() returned NULL!");
+        }
+    }
 }
 
 static void
@@ -2002,10 +2017,9 @@ SVGStartElement(void *context,const xmlChar *name,
                       /* reallocate the needed memory once */
                       size_t NewSize = strlen(value) + 6;   /* 6 == url()<null> */
                       MagickReallocMemory(char *,svg_info->url,NewSize);
-                      memcpy(svg_info->url,"url(",4);
-                      strcpy(svg_info->url+4,value);
-                      svg_info->url[NewSize-2] = ')';
-                      svg_info->url[NewSize-1] = '\0';
+                      strlcpy(svg_info->url,"url(",NewSize);
+                      strlcat(svg_info->url,value,NewSize);
+                      strlcat(svg_info->url,")",NewSize);
                     }
                   else
                     (void) CloneString(&svg_info->url,value);
@@ -2567,10 +2581,9 @@ SVGStartElement(void *context,const xmlChar *name,
                       /* reallocate the needed memory once */
                       size_t NewSize = strlen(value) + 6;   /* 6 == url()<null> */
                       MagickReallocMemory(char *,svg_info->url,NewSize);
-                      memcpy(svg_info->url,"url(",4);
-                      strcpy(svg_info->url+4,value);
-                      svg_info->url[NewSize-2] = ')';
-                      svg_info->url[NewSize-1] = '\0';
+                      strlcpy(svg_info->url,"url(",NewSize);
+                      strlcat(svg_info->url,value,NewSize);
+                      strlcat(svg_info->url,")",NewSize);
                     }
                   else
                     (void) CloneString(&svg_info->url,value);
@@ -4058,12 +4071,30 @@ ReadSVGImage(const ImageInfo *image_info,ExceptionInfo *exception)
   if (image_info->size != (char *) NULL)
     (void) CloneString(&svg_info.size,image_info->size);
   (void) LogMagickEvent(CoderEvent,GetMagickModule(),"begin SAX");
-  (void) xmlSubstituteEntitiesDefault(1);
+  /*
+    xmlSubstituteEntitiesDefault(1) enables external ENTITY support
+    (e.g. SVGResolveEntity() which allows XML to be downloaded from an
+    external source.  This may be a security hazard if the input is
+    not trustworthy or if connecting to the correct source is not
+    assured. If the XML is parsed on the backside of a firewall then
+    it may be able to access unintended resources.
+
+    See "https://www.w3.org/TR/SVG11/svgdtd.html#DTD.1.16" and
+    "https://hdivsecurity.com/owasp-xml-external-entities-xxe".
+
+    FIXME: Do we need a way for the user to enable this?  Does
+    retrieval of external entities work at all?
+  */
+  (void) xmlSubstituteEntitiesDefault(0);
 
   (void) memset(&SAXModules,0,sizeof(SAXModules));
+#if defined(ENABLE_XML_INTERNAL_SUBSET) && ENABLE_XML_INTERNAL_SUBSET
   SAXModules.internalSubset=SVGInternalSubset;
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
   SAXModules.isStandalone=SVGIsStandalone;
+#if defined(ENABLE_XML_INTERNAL_SUBSET) && ENABLE_XML_INTERNAL_SUBSET
   SAXModules.hasInternalSubset=SVGHasInternalSubset;
+#endif /* ENABLE_XML_INTERNAL_SUBSET */
   SAXModules.hasExternalSubset=SVGHasExternalSubset;
   SAXModules.resolveEntity=SVGResolveEntity;
   SAXModules.getEntity=SVGGetEntity;
@@ -4094,28 +4125,35 @@ ReadSVGImage(const ImageInfo *image_info,ExceptionInfo *exception)
                                           image->filename);
   if (svg_info.parser == (xmlParserCtxtPtr) NULL)
     {
-      /* FIXME: Handle failure! */
+      ThrowException(exception,DrawError,UnableToDrawOnImage,
+                     "Failed to push XML parser context");
     }
-  while ((n=ReadBlob(image,MaxTextExtent-1,message)) != 0)
+  if (svg_info.parser != (xmlParserCtxtPtr) NULL)
     {
-      message[n]='\0';
-      status=xmlParseChunk(svg_info.parser,message,(int) n,False);
-      if (status != 0)
-        break;
+      while ((n=ReadBlob(image,MaxTextExtent-1,message)) != 0)
+        {
+          message[n]='\0';
+          status=xmlParseChunk(svg_info.parser,message,(int) n,False);
+          if (status != 0)
+            break;
+        }
+      (void) xmlParseChunk(svg_info.parser,message,0,True);
+      /*
+        Assure that our private context is freed, even if we abort before
+        seeing the document end.
+      */
+      SVGEndDocument(&svg_info);
+      if (svg_info.parser->myDoc != (xmlDocPtr) NULL)
+        {
+          xmlFreeDoc(svg_info.parser->myDoc);
+          svg_info.parser->myDoc = (xmlDocPtr) NULL;
+        }
+      /*
+        Free all the memory used by a parser context. However the parsed
+        document in ctxt->myDoc is not freed (so we just did that).
+      */
+      xmlFreeParserCtxt(svg_info.parser);
     }
-  (void) xmlParseChunk(svg_info.parser,message,0,True);
-  /*
-    Assure that our private context is freed, even if we abort before
-    seeing the document end.
-  */
-  SVGEndDocument(&svg_info);
-  if (svg_info.parser->myDoc != (xmlDocPtr) NULL)
-    xmlFreeDoc(svg_info.parser->myDoc);
-  /*
-    Free all the memory used by a parser context. However the parsed
-    document in ctxt->myDoc is not freed (so we just did that).
-  */
-  xmlFreeParserCtxt(svg_info.parser);
   (void) LogMagickEvent(CoderEvent,GetMagickModule(),"end SAX");
   (void) fclose(file);
   CloseBlob(image);
@@ -4192,6 +4230,8 @@ ReadSVGImage(const ImageInfo *image_info,ExceptionInfo *exception)
 %  whether the format supports native in-memory I/O, and a brief
 %  description of the format.
 %
+%  The SVG writer is disabled by default since it does not work.
+%
 %  The format of the RegisterSVGImage method is:
 %
 %      RegisterSVGImage(void)
@@ -4213,9 +4253,9 @@ RegisterSVGImage(void)
 #if defined(HasXML)
   entry->decoder=(DecoderHandler) ReadSVGImage;
 #endif /* defined(HasXML) */
-#if ENABLE_SVG_WRITER
+#if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER
   entry->encoder=(EncoderHandler) WriteSVGImage;
-#endif /* if ENABLE_SVG_WRITER */
+#endif /* if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER */
   entry->description="Scalable Vector Graphics";
 #if defined(HAS_VERSION)
     entry->version=version;
@@ -4227,9 +4267,9 @@ RegisterSVGImage(void)
 #if defined(HasXML)
   entry->decoder=(DecoderHandler) ReadSVGImage;
 #endif /* defined(HasXML) */
-#if ENABLE_SVG_WRITER
+#if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER
   entry->encoder=(EncoderHandler) WriteSVGImage;
-#endif /* if ENABLE_SVG_WRITER */
+#endif /* if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER */
   entry->description="Scalable Vector Graphics (ZIP compressed)";
 #if defined(HAS_VERSION)
     entry->version=version;
@@ -4268,7 +4308,7 @@ UnregisterSVGImage(void)
   (void) UnregisterMagickInfo("SVGZ");
 }
 
-#if ENABLE_SVG_WRITER
+#if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -5370,7 +5410,7 @@ WriteSVGImage(const ImageInfo *image_info,Image *image)
                 status=False;
                 break;
               }
-            (void) strcpy(message,"  <polyline points=\"");
+            (void) strlcpy(message,"  <polyline points=\"",sizeof(message));
             (void) WriteBlobString(image,message);
             length=strlen(message);
             for ( ; j < i; j++)
@@ -5399,7 +5439,7 @@ WriteSVGImage(const ImageInfo *image_info,Image *image)
             primitive_info[i].coordinates=0;
             primitive_info[j].coordinates++;
             i++;
-            (void) strcpy(message,"  <polygon points=\"");
+            (void) strlcpy(message,"  <polygon points=\"",sizeof(message));
             (void) WriteBlobString(image,message);
             length=strlen(message);
             for ( ; j < i; j++)
@@ -5528,8 +5568,8 @@ WriteSVGImage(const ImageInfo *image_info,Image *image)
   MagickFreeMemory(token);
   if (primitive_info != (PrimitiveInfo *) NULL)
     MagickFreeMemory(primitive_info);
-  CloseBlob(image);
+  status &= CloseBlob(image);
   return(status);
 }
 #endif
-#endif /* if ENABLE_SVG_WRITER */
+#endif /* if defined(ENABLE_SVG_WRITER) && ENABLE_SVG_WRITER */

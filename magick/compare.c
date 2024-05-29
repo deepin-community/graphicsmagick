@@ -797,7 +797,7 @@ GetImageDistortion(const Image *reference_image,
 %      of red, green, and blue values in your image.
 %
 %  A small normalized mean square error, accessed as
-%  image->normalized_mean_error, suggests the images are very similiar in
+%  image->normalized_mean_error, suggests the images are very similar in
 %  spatial layout and color.
 %
 %  The format of the IsImagesEqual method is:
@@ -990,10 +990,13 @@ InitializeDifferenceImageOptions(DifferenceImageOptions *options,
                                  ExceptionInfo *exception)
 {
   assert(options != (DifferenceImageOptions *) NULL);
+  ARG_NOT_USED(exception);
+
   memset(options,0,sizeof(DifferenceImageOptions));
   options->channel=AllChannels;
   options->highlight_style=TintHighlightStyle;
-  (void) QueryColorDatabase(HighlightColor,&options->highlight_color,exception);
+  /* (void) QueryColorDatabase(HighlightColor,&options->highlight_color,exception); */
+  HighlightColorInit(&options->highlight_color);
 }
 
 

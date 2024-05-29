@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2022 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -140,7 +140,7 @@ ModuleExport void UnregisterPREVIEWImage(void)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  Method WritePreviewImage creates several tiles each with a varying
-%  stength of an image enhancement function (e.g. gamma).  The image is written
+%  strength of an image enhancement function (e.g. gamma).  The image is written
 %  in the MIFF format.
 %
 %  The format of the WritePreviewImage method is:
@@ -400,31 +400,31 @@ static unsigned int WritePreviewImage(const ImageInfo *image_info,Image *image)
         switch ((int) x)
         {
           case 0:
-            (void) strcpy(factor,"uniform");
+            (void) strlcpy(factor,"uniform",sizeof(factor));
             noise=UniformNoise;
             break;
           case 1:
-            (void) strcpy(factor,"Gaussian");
+            (void) strlcpy(factor,"Gaussian",sizeof(factor));
             noise=GaussianNoise;
             break;
           case 2:
-            (void) strcpy(factor,"multiplicative");
+            (void) strlcpy(factor,"multiplicative",sizeof(factor));
             noise=MultiplicativeGaussianNoise;
             break;
           case 3:
-            (void) strcpy(factor,"impulse");
+            (void) strlcpy(factor,"impulse",sizeof(factor));
             noise=ImpulseNoise;
             break;
           case 4:
-            (void) strcpy(factor,"laplacian");
+            (void) strlcpy(factor,"laplacian",sizeof(factor));
             noise=LaplacianNoise;
             break;
           case 5:
-            (void) strcpy(factor,"Poisson");
+            (void) strlcpy(factor,"Poisson",sizeof(factor));
             noise=PoissonNoise;
             break;
           default:
-            (void) strcpy(preview_image->magick,"NULL");
+            (void) strlcpy(preview_image->magick,"NULL",sizeof(preview_image->magick));
             noise=UniformNoise;
             break;
         }

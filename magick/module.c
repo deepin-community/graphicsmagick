@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003 - 2019 GraphicsMagick Group
+% Copyright (C) 2003 - 2022 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -589,7 +589,7 @@ FindMagickModule(const char *filename,MagickModuleType module_type,
       return MagickFail;
     }
 
-  if (IsEventLogging())
+  if (IsEventLogged(ConfigureEvent))
     {
       char
         list_seperator[2],
@@ -969,7 +969,7 @@ InitializeModuleSearchPath(MagickModuleType module_type,
             buffer[MaxTextExtent];
 
           const char
-            *seperator;
+            *separator;
 
           size_t
             length;
@@ -977,9 +977,9 @@ InitializeModuleSearchPath(MagickModuleType module_type,
           MagickBool
             skip=MagickFalse;
 
-          seperator = strchr(start,DirectoryListSeparator);
-          if (seperator)
-            length=seperator-start;
+          separator = strchr(start,DirectoryListSeparator);
+          if (separator)
+            length=separator-start;
           else
             length=end-start;
           if (length > MaxTextExtent-1)
@@ -1029,7 +1029,7 @@ InitializeModuleSearchPath(MagickModuleType module_type,
           if (skip == MagickFalse)
             {
               if (buffer[length-1] != DirectorySeparator[0])
-                (void) strcat(buffer,DirectorySeparator);
+                (void) strlcat(buffer,DirectorySeparator,sizeof(buffer));
               AddModulePath(path_map,&path_index,buffer,exception);
             }
           start += length+1;
@@ -1167,7 +1167,7 @@ InitializeModuleSearchPath(MagickModuleType module_type,
   /*
     Search current directory.
   */
-  strcpy(path,"");
+  strlcpy(path,"",sizeof(path));
   AddModulePath(path_map,&path_index,path,exception);
 
   return (status);

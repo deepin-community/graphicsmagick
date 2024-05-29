@@ -13,6 +13,18 @@ ways:
 .. contents::
   :local:
 
+Project Hosting
+---------------
+
+  * Hosting at https://foss.heptapod.net/ (since 2023) is donated by Clever Cloud
+    <https://clever-cloud.com/> and Octobus <https://octobus.net/>.
+
+  * Hosting at https://sourceforge.net/ (since 2003) is provided for
+    free by SourceForge <https://sourceforge.net/about>.
+
+  * Hosting at http://www.graphicsmagick.org/ (since 2003) is provided
+    by Bob Friesenhahn.
+
 Fuzz Testing
 ------------
 
@@ -24,7 +36,7 @@ Fuzz Testing
 
   * Gynvael Coldwind and Mateusz Jurczyk of the Google Security Team
 
-  * Hanno Böck
+  * Hanno BÃ¶ck
 
   * Tobias Ospelt
 

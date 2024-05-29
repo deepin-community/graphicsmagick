@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003 - 2018 GraphicsMagick Group
+ * Copyright (C) 2003 - 2023 GraphicsMagick Group
  * Copyright (C) 2003 ImageMagick Studio
  * Copyright 1991-1999 E. I. du Pont de Nemours and Company
  *
@@ -12,7 +12,7 @@
  * verify that the image is correct, only that encode/decode process
  * is repeatable.
  *
- * Written by Bob Friesenhahn <bfriesen@simple.dallas.tx.us>
+ * Written by Bob Friesenhahn <bfriesen@GraphicsMagick.org>
  *
  * The image returned by both reads must be identical (or deemed close
  * enough) in order for the test to pass.
@@ -24,6 +24,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
+
+static void DescribeFrames(const ImageInfo *image_info, Image *list, const MagickBool ping)
+{
+  /* [0] AVS 70x46+072 Grayscale 8-bit adea7b1989cc5d19794a25ae3d7d0bc86f83b014f7231a869ee7b97177d54ab5 */
+  static const char descr_fmt[] = "[%s] %m %wx%h%X%y %r %q-bit %#";
+  static const char descr_fmt_ping[] = "[%s] %m %wx%h%X%y %r %q-bit";
+  Image *list_entry = list;
+
+  while (list_entry != (Image *) NULL)
+    {
+      char
+        *text;
+
+      text=TranslateText(image_info,list_entry,ping ? descr_fmt_ping : descr_fmt);
+      if (text != (char *) NULL)
+        {
+          fprintf(stdout,"%s\n", text);
+          MagickFree(text);
+        }
+      list_entry=GetNextImageInList(list_entry);
+    }
+}
 
 int main ( int argc, char **argv )
 {
@@ -67,6 +90,17 @@ int main ( int argc, char **argv )
   (void) memset(infile,0,sizeof(infile));
   (void) memset(size,0,sizeof(size));
   (void) memset(filespec,0,sizeof(filespec));
+
+  /*
+    Initialize locale from environment variables (LANG, LC_CTYPE,
+    LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY, LC_MESSAGES,
+    LC_ALL), but require that LC_NUMERIC use common conventions.  The
+    LC_NUMERIC variable affects the decimal point character and
+    thousands separator character for the formatted input/output
+    functions and string conversion functions.
+  */
+  (void) setlocale(LC_ALL,"");
+  (void) setlocale(LC_NUMERIC,"C");
 
   if (LocaleNCompare("rwfile",argv[0],7) == 0)
     InitializeMagick((char *) NULL);
@@ -195,10 +229,10 @@ int main ( int argc, char **argv )
       goto program_exit;
     }
 
-  (void) strncpy(infile, argv[arg], MaxTextExtent );
+  (void) strncpy(infile, argv[arg], MaxTextExtent-1 );
   infile[MaxTextExtent-1]='\0';
   arg++;
-  (void) strncpy( format, argv[arg], MaxTextExtent );
+  (void) strncpy( format, argv[arg], MaxTextExtent-1 );
   format[MaxTextExtent-1]='\0';
 
   magick_info=GetMagickInfo(format,&exception);
@@ -388,7 +422,7 @@ int main ( int argc, char **argv )
     else
       {
         /* Print a short description of the image to stdout */
-        DescribeImage( ping_image, stdout, MagickFalse );
+        /* DescribeFrames(imageInfo, ping_image, MagickTrue); */
         DestroyImageList( ping_image );
       }
     if (ping_error)
@@ -515,6 +549,10 @@ int main ( int argc, char **argv )
       exit_status = 1;
       goto program_exit;
     }
+
+  /* Print a short description of the image to stdout */
+  DescribeFrames(imageInfo, final, MagickFalse);
+  (void) fflush(stdout);
 
   if (check)
     {

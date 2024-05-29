@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2022 GraphicsMagick Group
+% Copyright (C) 2023 GraphicsMagick Group
 %
 % This program is covered by multiple licenses, which are described in
 % Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -14,13 +14,14 @@
 %                       H   H  E      I  F                                    %
 %                       H   H  EEEEE  I  F                                    %
 %                                                                             %
-%                     Read Heif/Heic Image Format.                            %
+%           Read HEIF/HEIC/AVIF image formats using libheif.                  %
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 * Status: Support for reading a single image.
 */
 
 #include "magick/studio.h"
+#include "magick/attribute.h"
 #include "magick/blob.h"
 #include "magick/colormap.h"
 #include "magick/log.h"
@@ -29,14 +30,19 @@
 #include "magick/monitor.h"
 #include "magick/pixel_cache.h"
 #include "magick/profile.h"
+#include "magick/resource.h"
 #include "magick/utility.h"
 #include "magick/resource.h"
+
+#if defined(HasHEIF)
 
 /* Set to 1 to enable the currently non-functional progress monitor callbacks */
 #define HEIF_ENABLE_PROGRESS_MONITOR 0
 
-#if defined(HasHEIF)
 #include <libheif/heif.h>
+#ifdef HAVE_HEIF_INIT
+static MagickBool heif_initialized = MagickFalse;
+#endif /* ifdef HAVE_HEIF_INIT */
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,11 +60,11 @@
 %
 %  The format of the IsHEIF  method is:
 %
-%      unsigned int IsHEIF(const unsigned char *magick,const size_t length)
+%      MagickBool IsHEIF(const unsigned char *magick,const size_t length)
 %
 %  A description of each parameter follows:
 %
-%    o status:  Method IsHEIF returns True if the image format type is HEIF.
+%    o status:  Method IsHEIF returns MagickTrue if the image format type is HEIF.
 %
 %    o magick: This string is generally the first few bytes of an image file
 %      or blob.
@@ -67,19 +73,25 @@
 %
 %
 */
-static unsigned int IsHEIF(const unsigned char *magick,const size_t length)
+static MagickBool IsHEIF(const unsigned char *magick,const size_t length)
 {
   enum heif_filetype_result
     heif_filetype;
 
+  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                        "Testing header for supported HEIF format");
+
   if (length < 12)
-    return(False);
+    return(MagickFalse);
 
   heif_filetype = heif_check_filetype(magick, (int) length);
   if (heif_filetype == heif_filetype_yes_supported)
-    return True;
+    return MagickTrue;
 
-  return(False);
+  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                        "Not a supported HEIF format");
+
+  return(MagickFalse);
 }
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,17 +120,27 @@ static unsigned int IsHEIF(const unsigned char *magick,const size_t length)
 */
 
 #define HEIFReadCleanup()                                              \
-  if (heif_image) heif_image_release(heif_image);                      \
-  if (heif_image_handle) heif_image_handle_release(heif_image_handle); \
-  if (heif) heif_context_free(heif);                                   \
-  MagickFreeResourceLimitedMemory(in_buf)
+  do                                                                   \
+    {                                                                  \
+      if (heif_image)                                                  \
+        heif_image_release(heif_image);                                \
+      if (heif_image_handle)                                           \
+        heif_image_handle_release(heif_image_handle);                  \
+      if (heif)                                                        \
+        heif_context_free(heif);                                       \
+      MagickFreeResourceLimitedMemory(in_buf);                         \
+    } while (0);
 
 #define ThrowHEIFReaderException(code_,reason_,image_) \
-  {                                                    \
-    HEIFReadCleanup();                                 \
-    ThrowReaderException(code_,reason_,image_)         \
-  }
+  do                                                   \
+    {                                                  \
+      HEIFReadCleanup();                               \
+      ThrowReaderException(code_,reason_,image_);      \
+    } while (0);
 
+/*
+  Read metadata (Exif and XMP)
+*/
 static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
                            Image *image, ExceptionInfo *exception)
 {
@@ -132,7 +154,9 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
   struct heif_error
     err;
 
-  count=heif_image_handle_get_number_of_metadata_blocks(heif_image_handle, NULL);
+  /* Get number of metadata blocks attached to image */
+  count=heif_image_handle_get_number_of_metadata_blocks(heif_image_handle,
+                                                        /*type_filter*/ NULL);
   if (count==0)
     return image;
 
@@ -140,59 +164,216 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
   if (ids == (heif_item_id *) NULL)
     ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
 
+  /* Get list of metadata block ids */
   count=heif_image_handle_get_list_of_metadata_block_IDs(heif_image_handle, NULL,
                                                          ids,count);
 
-  for (i=0; i<count; i++)
+  /* For each block id ... */
+  for (i=0; i < count; i++)
     {
-      const char*
-        profile_name=heif_image_handle_get_metadata_type(heif_image_handle,ids[i]);
+      const char
+        *content_type,
+        *profile_name;
 
       size_t
-        profile_size=heif_image_handle_get_metadata_size(heif_image_handle,ids[i]);
+        exif_pad = 0,
+        profile_size;
 
-      unsigned char*
-        profile;
+      unsigned char
+        *profile;
+
+      /* Access string indicating the type of the metadata (e.g. "Exif") */
+      profile_name=heif_image_handle_get_metadata_type(heif_image_handle,ids[i]);
+
+      /* Access string indicating the content type */
+      content_type=heif_image_handle_get_metadata_content_type(heif_image_handle,ids[i]);
+
+      /* Get the size of the raw metadata, as stored in the HEIF file */
+      profile_size=heif_image_handle_get_metadata_size(heif_image_handle,ids[i]);
 
       if (image->logging)
         (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                              "Profile \"%s\" with size %" MAGICK_SIZE_T_F "u bytes",
-                              profile_name, (MAGICK_SIZE_T) profile_size);
+                              "Profile \"%s\" with content type \"%s\""
+                              " and size %" MAGICK_SIZE_T_F "u bytes",
+                              profile_name ? profile_name : "(null)",
+                              content_type ? content_type : "(null)",
+                              (MAGICK_SIZE_T) profile_size);
 
-      profile=MagickAllocateResourceLimitedArray(unsigned char*,profile_size,
-                                                 sizeof(*profile));
-      if (profile == (unsigned char*) NULL)
+      if (NULL != profile_name && profile_size > 0)
         {
-          MagickFreeResourceLimitedMemory(ids);
-          ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
-        }
+          if (strncmp(profile_name,"Exif",4) == 0)
+            exif_pad=2;
 
-      err=heif_image_handle_get_metadata(heif_image_handle,ids[i],profile);
+          /* Allocate memory for profile */
+          profile=MagickAllocateResourceLimitedArray(unsigned char*,profile_size+exif_pad,
+                                                     sizeof(*profile));
+          if (profile == (unsigned char*) NULL)
+            {
+              MagickFreeResourceLimitedMemory(ids);
+              ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
+            }
 
-      if (err.code != heif_error_Ok)
-        {
-          if (image->logging)
-            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                                  "heif_image_handle_get_metadata() reports error \"%s\"",
-                                  err.message);
+          /*
+            Copy metadata into 'profile' buffer. For Exif data, you
+            probably have to skip the first four bytes of the data,
+            since they indicate the offset to the start of the TIFF
+            header of the Exif data.
+          */
+          err=heif_image_handle_get_metadata(heif_image_handle,ids[i],profile+exif_pad);
+
+          if (err.code != heif_error_Ok)
+            {
+              if (image->logging)
+                (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                      "heif_image_handle_get_metadata() reports error \"%s\"",
+                                      err.message);
+              MagickFreeResourceLimitedMemory(profile);
+              MagickFreeResourceLimitedMemory(ids);
+              ThrowReaderException(CorruptImageError,
+                                   AnErrorHasOccurredReadingFromFile,image);
+            }
+
+          if (strncmp(profile_name,"Exif",4) == 0 && profile_size > 4)
+            {
+              /* Parse and skip offset to TIFF header */
+              unsigned char *p = profile;
+              magick_uint32_t offset;
+
+              /* Big-endian offset decoding */
+              offset = p[exif_pad+0] << 24 |
+                       p[exif_pad+1] << 16 |
+                       p[exif_pad+2] << 8 |
+                       p[exif_pad+3];
+
+              /*
+                If the TIFF header offset is not zero, then need to
+                move the TIFF data forward to the correct offset.
+              */
+              profile_size -= 4;
+              if (offset > 0 && offset < profile_size)
+                {
+                  profile_size -= offset;
+
+                  /* Strip any EOI marker if payload starts with a JPEG marker */
+                  if (profile_size > 2 &&
+                      (memcmp(p+exif_pad+4,"\xff\xd8",2) == 0 ||
+                      memcmp(p+exif_pad+4,"\xff\xe1",2) == 0) &&
+                      memcmp(p+exif_pad+4+profile_size-2,"\xff\xd9",2) == 0)
+                    profile_size -= 2;
+
+                  (void) memmove(p+exif_pad+4,p+exif_pad+4+offset,profile_size);
+                }
+
+              p[0]='E';
+              p[1]='x';
+              p[2]='i';
+              p[3]='f';
+              p[4]='\0';
+              p[5]='\0';
+
+              SetImageProfile(image,"EXIF",profile,profile_size+exif_pad+4);
+
+              /*
+                Retrieve image orientation from EXIF and store in
+                image.
+              */
+              {
+                const ImageAttribute
+                  *attribute;
+
+                attribute = GetImageAttribute(image,"EXIF:Orientation");
+                if ((attribute != (const ImageAttribute *) NULL) &&
+                    (attribute->value != (char *) NULL))
+                  {
+                    int
+                      orientation;
+
+                    orientation=MagickAtoI(attribute->value);
+                    if ((orientation > UndefinedOrientation) &&
+                        (orientation <= LeftBottomOrientation))
+                      image->orientation=(OrientationType) orientation;
+                  }
+              }
+            }
+          else
+            {
+              if (NULL != content_type && strncmp(content_type,"application/rdf+xml",19) == 0)
+                SetImageProfile(image,"XMP",profile,profile_size);
+            }
           MagickFreeResourceLimitedMemory(profile);
-          MagickFreeResourceLimitedMemory(ids);
-          ThrowReaderException(CorruptImageError,
-                               AnErrorHasOccurredReadingFromFile,image);
         }
-
-      if (strncmp(profile_name,"Exif",4) == 0 && profile_size > 4)
-        {
-          /* skip TIFF-Header */
-          SetImageProfile(image,profile_name,profile+4,profile_size-4);
-        }
-      else
-        {
-          SetImageProfile(image,profile_name,profile,profile_size);
-        }
-      MagickFreeResourceLimitedMemory(profile);
     }
   MagickFreeResourceLimitedMemory(ids);
+  return image;
+}
+
+
+/*
+  Read Color Profile
+*/
+static Image *ReadColorProfile(struct heif_image_handle *heif_image_handle,
+                               Image *image, ExceptionInfo *exception)
+{
+  struct heif_error
+    err;
+
+  enum heif_color_profile_type
+    profile_type; /* 4 chars encoded into enum by 'heif_fourcc()' */
+
+  unsigned char
+    *profile;
+
+  profile_type = heif_image_handle_get_color_profile_type(heif_image_handle);
+
+  if (heif_color_profile_type_not_present == profile_type)
+    return image;
+
+  if (image->logging && (heif_color_profile_type_not_present !=profile_type))
+    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                          "Found color profile of type \"%c%c%c%c\")",
+                          ((char) ((unsigned int) profile_type >> 24) & 0xff),
+                          ((char) ((unsigned int) profile_type >> 16) & 0xff),
+                          ((char) ((unsigned int) profile_type >> 8) & 0xff),
+                          ((char) ((unsigned int) profile_type) & 0xff));
+
+  if (heif_color_profile_type_prof == profile_type)
+    {
+      size_t profile_size;
+
+      profile_size = heif_image_handle_get_raw_color_profile_size(heif_image_handle);
+
+      if (image->logging)
+        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                              "Reading ICC profile with size %" MAGICK_SIZE_T_F "u bytes",
+                              (MAGICK_SIZE_T) profile_size);
+
+      if (profile_size > 0)
+        {
+          /* Allocate 'profile' buffer for profile */
+          profile=MagickAllocateResourceLimitedArray(unsigned char*,profile_size,
+                                                     sizeof(*profile));
+
+          if (profile == (unsigned char*) NULL)
+            ThrowReaderException(ResourceLimitError,MemoryAllocationFailed,image);
+
+          /* Copy ICC profile to 'profile' buffer */
+          err = heif_image_handle_get_raw_color_profile(heif_image_handle,
+                                                        profile);
+          if (err.code != heif_error_Ok)
+            {
+              if (image->logging)
+                (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                      "heif_image_handle_get_raw_color_profile() reports error \"%s\"",
+                                      err.message);
+              MagickFreeResourceLimitedMemory(profile);
+              ThrowReaderException(CorruptImageError,
+                                   AnErrorHasOccurredReadingFromFile,image);
+
+            }
+          SetImageProfile(image,"ICM",profile,profile_size);
+          MagickFreeResourceLimitedMemory(profile);
+        }
+    }
   return image;
 }
 
@@ -206,7 +387,7 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
 
   Libheif issue 546 (https://github.com/strukturag/libheif/pull/546)
   suggests changing the return type of on_progress and start_progress
-  to "bool" so that one can implement cancelation support.
+  to "bool" so that one can implement cancellation support.
  */
 typedef struct ProgressUserData_
 {
@@ -307,10 +488,22 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
   PixelPacket
     *q;
 
+  MagickBool
+    ignore_transformations;
+
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickSignature);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickSignature);
+
+#ifdef HAVE_HEIF_INIT
+  if (!heif_initialized)
+    {
+      /* heif_init() accepts a 'struct heif_init_params *' argument */
+      heif_init((struct heif_init_params *) NULL);
+      heif_initialized = MagickTrue;
+    }
+#endif /* HAVE_HEIF_INIT */
 
   /*
     Open image file.
@@ -330,9 +523,38 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
   if (ReadBlob(image,in_len,in_buf) != in_len)
     ThrowHEIFReaderException(CorruptImageError, UnexpectedEndOfFile, image);
 
+#if LIBHEIF_NUMERIC_VERSION >= 0x01090000
+  ignore_transformations = MagickFalse;
+  {
+    const char
+      *value;
+
+    if ((value=AccessDefinition(image_info,"heif","ignore-transformations")))
+      if (LocaleCompare(value,"TRUE") == 0)
+        ignore_transformations = MagickTrue;
+  }
+#else
+  /* Older versions are missing required function to get real width/height. */
+  ignore_transformations = MagickTrue;
+#endif
+
   /* Init HEIF-Decoder handles */
   heif=heif_context_alloc();
 
+#if defined(HAVE_HEIF_CONTEXT_SET_MAXIMUM_IMAGE_SIZE_LIMIT)
+  {
+    /* Add an image size limit */
+    magick_int64_t width_limit = GetMagickResourceLimit(WidthResource);
+    if (MagickResourceInfinity != width_limit)
+      {
+        if (width_limit > INT_MAX)
+          width_limit =  INT_MAX;
+        heif_context_set_maximum_image_size_limit(heif, (int) width_limit);
+      }
+  }
+#endif /* if defined(HAVE_HEIF_CONTEXT_SET_MAXIMUM_IMAGE_SIZE_LIMIT) */
+
+  /* FIXME: DEPRECATED: use heif_context_read_from_memory_without_copy() instead. */
   heif_status=heif_context_read_from_memory(heif, in_buf, in_len, NULL);
   if (heif_status.code == heif_error_Unsupported_filetype
       || heif_status.code == heif_error_Unsupported_feature)
@@ -362,6 +584,10 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
       ThrowHEIFReaderException(CorruptImageError, AnErrorHasOccurredReadingFromFile, image);
     }
 
+  /*
+    Note: Those values are preliminary but likely the upper bound
+    The real image values might be rotated or cropped due to transformations
+  */
   image->columns=heif_image_handle_get_width(heif_image_handle);
   image->rows=heif_image_handle_get_height(heif_image_handle);
   if (heif_image_handle_has_alpha_channel(heif_image_handle))
@@ -375,13 +601,25 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
                             "Matte: %s", image->matte ? "True" : "False");
     }
 
+  /* Read EXIF and XMP profile */
   if (!ReadMetadata(heif_image_handle, image, exception))
     {
       HEIFReadCleanup();
       return NULL;
     }
 
-  if (image_info->ping)
+  /* Read ICC profile */
+  if (!ReadColorProfile(heif_image_handle, image, exception))
+    {
+      HEIFReadCleanup();
+      return NULL;
+    }
+
+  /*
+    When apply transformations (the default) the whole image has to be
+    read to get the real dimensions.
+  */
+  if (image_info->ping && ignore_transformations)
     {
       image->depth = 8;
       HEIFReadCleanup();
@@ -403,7 +641,11 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
   progress_user_data.progress = 0;
 
   /* version 1 options */
-  decode_options->ignore_transformations = 0;
+#if LIBHEIF_NUMERIC_VERSION >= 0x01090000
+  decode_options->ignore_transformations = (ignore_transformations == MagickTrue) ? 1 : 0;
+#else
+  decode_options->ignore_transformations = 1;
+#endif
 #if HEIF_ENABLE_PROGRESS_MONITOR
   decode_options->start_progress = start_progress;
   decode_options->on_progress = on_progress;
@@ -438,8 +680,26 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
       ThrowHEIFReaderException(CorruptImageError, AnErrorHasOccurredReadingFromFile, image);
     }
 
+  /*
+    Update with final values, see preliminary note above
+
+    These functions are apparently added in libheif 1.9
+  */
+#if LIBHEIF_NUMERIC_VERSION >= 0x01090000
+  image->columns=heif_image_get_primary_width(heif_image);
+  image->rows=heif_image_get_primary_height(heif_image);
+
+  if (image_info->ping)
+    {
+      image->depth = 8;
+      HEIFReadCleanup();
+      CloseBlob(image);
+      return image;
+    }
+#endif
+
   image->depth=heif_image_get_bits_per_pixel(heif_image, heif_channel_interleaved);
-  /* the requested channel is interleaved there depth is a sum of all channels
+  /* The requested channel is interleaved there depth is a sum of all channels
      split it up again: */
   if (image->logging)
     {
@@ -491,7 +751,7 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
   return image;
 }
 
-#endif
+#endif /* HasHEIF */
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -516,6 +776,7 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
 */
 ModuleExport void RegisterHEIFImage(void)
 {
+#if defined(HasHEIF)
   static const char
     description[] = "HEIF Image Format";
 
@@ -535,15 +796,25 @@ ModuleExport void RegisterHEIFImage(void)
   heif_minor=(encoder_version >> 8) & 0xff;
   heif_revision=encoder_version & 0xff;
   *version='\0';
-  (void) sprintf(version,
+  (void) snprintf(version, sizeof(version),
                   "heif v%u.%u.%u", heif_major,
                   heif_minor, heif_revision);
 
-  entry=SetMagickInfo("HEIF");
-#if defined(HasHEIF)
+  entry=SetMagickInfo("AVIF");
   entry->decoder=(DecoderHandler) ReadHEIFImage;
   entry->magick=(MagickHandler) IsHEIF;
-#endif
+  entry->description=description;
+  entry->adjoin=False;
+  entry->seekable_stream=MagickTrue;
+  if (*version != '\0')
+    entry->version=version;
+  entry->module="HEIF";
+  entry->coder_class=PrimaryCoderClass;
+  (void) RegisterMagickInfo(entry);
+
+  entry=SetMagickInfo("HEIF");
+  entry->decoder=(DecoderHandler) ReadHEIFImage;
+  entry->magick=(MagickHandler) IsHEIF;
   entry->description=description;
   entry->adjoin=False;
   entry->seekable_stream=MagickTrue;
@@ -554,10 +825,8 @@ ModuleExport void RegisterHEIFImage(void)
   (void) RegisterMagickInfo(entry);
 
   entry=SetMagickInfo("HEIC");
-#if defined(HasHEIF)
   entry->decoder=(DecoderHandler) ReadHEIFImage;
   entry->magick=(MagickHandler) IsHEIF;
-#endif
   entry->description=description;
   entry->adjoin=False;
   entry->seekable_stream=MagickTrue;
@@ -566,6 +835,7 @@ ModuleExport void RegisterHEIFImage(void)
   entry->module="HEIF";
   entry->coder_class=PrimaryCoderClass;
   (void) RegisterMagickInfo(entry);
+#endif /* HasHEIF */
 }
 
 /*
@@ -589,6 +859,13 @@ ModuleExport void RegisterHEIFImage(void)
 */
 ModuleExport void UnregisterHEIFImage(void)
 {
+#if defined(HasHEIF)
+  (void) UnregisterMagickInfo("AVIF");
   (void) UnregisterMagickInfo("HEIF");
   (void) UnregisterMagickInfo("HEIC");
+#ifdef HAVE_HEIF_DEINIT
+  if (heif_initialized)
+    heif_deinit();
+#endif /* HAVE_HEIF_DEINIT */
+#endif /* HasHEIF */
 }

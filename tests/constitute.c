@@ -1,10 +1,11 @@
 /*
+ * Copyright (C) 2003 - 2023 GraphicsMagick Group
  *
  * Test DispatchImage/ConstituteImage operations via
  * write/read/write/read sequence to detect any data corruption
  * problems.
  *
- * Written by Bob Friesenhahn <bfriesen@simple.dallas.tx.us>
+ * Written by Bob Friesenhahn <bfriesen@GraphicsMagick.org>
  *
  * The image returned by both reads must be identical in order for the
  * test to pass.
@@ -17,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 int main ( int argc, char **argv )
 {
@@ -55,6 +57,17 @@ int main ( int argc, char **argv )
 
   StorageType
     storage_type=CharPixel;
+
+  /*
+    Initialize locale from environment variables (LANG, LC_CTYPE,
+    LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY, LC_MESSAGES,
+    LC_ALL), but require that LC_NUMERIC use common conventions.  The
+    LC_NUMERIC variable affects the decimal point character and
+    thousands separator character for the formatted input/output
+    functions and string conversion functions.
+  */
+  (void) setlocale(LC_ALL,"");
+  (void) setlocale(LC_NUMERIC,"C");
 
   if (LocaleNCompare("constitute",argv[0],7) == 0)
     InitializeMagick((char *) NULL);
@@ -165,10 +178,10 @@ int main ( int argc, char **argv )
       goto program_exit;
     }
 
-  (void) strncpy(infile, argv[arg], MaxTextExtent );
+  (void) strncpy(infile, argv[arg], MaxTextExtent-1 );
   infile[MaxTextExtent-1]='\0';
   arg++;
-  (void) strncpy( map, argv[arg], MaxTextExtent );
+  (void) strncpy( map, argv[arg], MaxTextExtent-1 );
   map[MaxTextExtent-1]='\0';
 
 /*   for (arg=0; arg < argc; arg++) */
@@ -197,8 +210,10 @@ int main ( int argc, char **argv )
     }
 
   /*  If a CMYK map is specified, make sure that input image is CMYK */
-  if (strchr(map,'c') || strchr(map,'C') || strchr(map,'m') || strchr(map,'M') ||
-      strchr(map,'y') || strchr(map,'y') || strchr(map,'k') || strchr(map,'k'))
+  if ((strchr(map,'c') != NULL) || (strchr(map,'C') != NULL) ||
+      (strchr(map,'m') != NULL) || (strchr(map,'M') != NULL) ||
+      (strchr(map,'y') != NULL) || (strchr(map,'Y') != NULL) ||
+      (strchr(map,'k') != NULL) || (strchr(map,'K') != NULL))
     (void) TransformColorspace(original,CMYKColorspace);
 
   /*

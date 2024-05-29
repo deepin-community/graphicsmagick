@@ -1,4 +1,4 @@
-/* Copyright (C) 2003-2019 GraphicsMagick Group */
+/* Copyright (C) 2003-2024 GraphicsMagick Group */
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -6496,6 +6496,7 @@ WandExport unsigned int MagickPingImage(MagickWand *wand,const char *filename)
     return(False);
   AppendImageToList(&wand->images,images);
   wand->image=GetLastImageInList(wand->images);
+  wand->images=GetFirstImageInList(wand->image);
   return(True);
 }
 
@@ -6952,7 +6953,7 @@ WandExport char **MagickQueryFormats(const char *pattern,
   char
     **format_array;
 
-  int
+  unsigned int
     entries,
     i;
 
@@ -6974,7 +6975,7 @@ WandExport char **MagickQueryFormats(const char *pattern,
       return 0;
     }
 
-  format_array=MagickAllocateMemory(char **,(entries+1)*sizeof(char *));
+  format_array=MagickAllocateMemory(char **,((size_t)entries+1)*sizeof(char *));
   if (!format_array)
     {
       MagickFreeMemory(magick_info);
@@ -7135,6 +7136,7 @@ WandExport unsigned int MagickReadImage(MagickWand *wand,const char *filename)
     return(False);
   AppendImageToList(&wand->images,images);
   wand->image=GetLastImageInList(wand->images);
+  wand->images=GetFirstImageInList(wand->image);
   return(True);
 }
 
@@ -7178,6 +7180,7 @@ WandExport unsigned int MagickReadImageBlob(MagickWand *wand,
     return(False);
   AppendImageToList(&wand->images,images);
   wand->image=GetLastImageInList(wand->images);
+  wand->images=GetFirstImageInList(wand->image);
   return(True);
 }
 
@@ -7224,6 +7227,7 @@ WandExport unsigned int MagickReadImageFile(MagickWand *wand,FILE *file)
     return(False);
   AppendImageToList(&wand->images,images);
   wand->image=GetLastImageInList(wand->images);
+  wand->images=GetFirstImageInList(wand->image);
   return(True);
 }
 
@@ -11158,6 +11162,17 @@ WandExport MagickWand *NewMagickWand(void)
   /*
     Initialize GraphicsMagick in case it is not already initialized.
   */
+  /*
+    Initialize locale from environment variables (LANG, LC_CTYPE,
+    LC_NUMERIC, LC_TIME, LC_COLLATE, LC_MONETARY, LC_MESSAGES,
+    LC_ALL), but require that LC_NUMERIC use common conventions.  The
+    LC_NUMERIC variable affects the decimal point character and
+    thousands separator character for the formatted input/output
+    functions and string conversion functions.
+  */
+  (void) setlocale(LC_ALL,"");
+  (void) setlocale(LC_NUMERIC,"C");
+
   InitializeMagick(NULL);
 
   wand=MagickAllocateMemory(MagickWand *,sizeof(MagickWand));

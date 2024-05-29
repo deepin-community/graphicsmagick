@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2020 GraphicsMagick Group
+% Copyright (C) 2003-2022 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -200,7 +200,7 @@ static TXT_TYPE IsTXT(const unsigned char *magick,const size_t length)
       buffer[MaxTextExtent];
 
     (void) memset((void *)buffer,0,MaxTextExtent);
-    (void) memcpy((void *)buffer,(const void *)magick,Min(MaxTextExtent,length));
+    (void) memcpy((void *)buffer,(const void *)magick,Min(MaxTextExtent-1,length));
 
     if (!strncmp(buffer,"# ImageMagick pixel enumeration:",32))
       return IMAGEMAGICK_TXT;
@@ -328,7 +328,7 @@ static Image *ReadTXTImage(const ImageInfo *image_info,ExceptionInfo *exception)
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickSignature);
 
-  logging = IsEventLogging();
+  logging = IsEventLogged(CoderEvent);
   image=AllocateImage(image_info);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == False)
@@ -1312,6 +1312,6 @@ static unsigned int WriteTXTImage(const ImageInfo *image_info,Image *image)
   if (image_info->adjoin)
     while (image->previous != (Image *) NULL)
       image=image->previous;
-  CloseBlob(image);
-  return (MagickTrue);
+  status &= CloseBlob(image);
+  return (status);
 }

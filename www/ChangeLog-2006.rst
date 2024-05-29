@@ -170,10 +170,10 @@
     also warn if the semaphore recurses.
 
   - magick/log.c (SetLogEventMask): Avoid deadlock if invoked before
-        log.mgk has been loaded.
+    log.mgk has been loaded.
 
   - magick/attribute.c (GenerateEXIFAttribute): Fix memory leak on
-    error which was reported by Micha³ Kowalczuk.
+    error which was reported by Michal Kowalczuk.
 
 2006-01-03  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

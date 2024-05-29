@@ -354,7 +354,13 @@ static int BlobRead(jas_stream_obj_t *obj, char *buf, unsigned cnt)
     *source = (StreamManager *) obj;
 
   count=ReadBlob(source->image,(size_t) cnt,(void *) buf);
+#if defined(HAVE_JAS_STREAM_IO_V3)
   return (count);
+#else
+  if ((size_t)((int) count) != count)
+    count = 0;
+  return ((int) count);
+#endif
 }
 
 /* Write characters to a file object. */
@@ -372,7 +378,13 @@ static int BlobWrite(jas_stream_obj_t *obj, const char *buf, unsigned cnt)
     *source = (StreamManager *) obj;
 
   count=WriteBlob(source->image,(size_t) cnt,(void *) buf);
+#if defined(HAVE_JAS_STREAM_IO_V3)
   return(count);
+#else
+  if ((size_t)((int) count) != count)
+    count = 0;
+  return ((int) count);
+#endif
 }
 
 /* Set the position for a file object. */
@@ -389,12 +401,13 @@ static long BlobSeek(jas_stream_obj_t *obj,long offset,int origin)
 /* int (*close_)(jas_stream_obj_t *obj); */
 static int BlobClose(jas_stream_obj_t *obj)
 {
+  int status;
   StreamManager
     *source = (StreamManager *) obj;
 
-  CloseBlob(source->image);
+  status = CloseBlob(source->image);
   jas_free(source);
-  return (0);
+  return (status == 0 ? EOF : 0);
 }
 
 
@@ -725,6 +738,10 @@ static Image *ReadJP2Image(const ImageInfo *image_info,
 
     /* Get current seek position (normally 0) */
     pos=TellBlob(image);
+    if (pos < 0)
+      {
+        ThrowJP2ReaderException(BlobError,UnableToObtainOffset,image);
+      }
 
     /* Read header */
     if ((magick_length=ReadBlob(image,sizeof(magick),magick)) != sizeof(magick))
@@ -1007,23 +1024,32 @@ static Image *ReadJP2Image(const ImageInfo *image_info,
   */
   for (component=0; component < (long) number_components; component++)
     {
-      unsigned long
+      double
+        scale_to_quantum;
+
+      unsigned int
         component_depth,
         i,
         max_value;
 
-      double
-        scale_to_quantum;
-
       component_depth=jas_image_cmptprec(jp2_image,components[component]);
-      max_value=MaxValueGivenBits(component_depth);
+      if ((0 == component_depth) || (component_depth > 16))
+        {
+          (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                "Component %u depth is %u!",
+                                component, component_depth);
+          ThrowJP2ReaderException(CorruptImageError,ImproperImageHeader,image);
+        }
+      max_value=(unsigned int) MaxValueGivenBits(component_depth);
+      if ((0 == max_value) || (max_value > 65535))
+        ThrowJP2ReaderException(CorruptImageError,ImproperImageHeader,image);
       scale_to_quantum=MaxRGBDouble/max_value;
       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                             "Channel %d scale is %g", component, scale_to_quantum);
       channel_lut[component]=MagickAllocateResourceLimitedArray(Quantum *, (size_t) max_value+1,sizeof(Quantum));
       if (channel_lut[component] == (Quantum *) NULL)
         ThrowJP2ReaderException(ResourceLimitError,MemoryAllocationFailed,image);
-      for(i=0; i <= max_value; i++)
+      for (i=0; i <= max_value; i++)
         (channel_lut[component])[i]=scale_to_quantum*i+0.5;
     }
 

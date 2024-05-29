@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2019 GraphicsMagick Group
+% Copyright (C) 2003-2022 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -106,6 +106,8 @@ StaticMagic[] =
   MAGIC("JPEG", 0, "\377\330\377"),
   MAGIC("JPC", 0, "\377\117"),
   MAGIC("JP2", 4, "\152\120\040\040\015"),
+  MAGIC("JXL", 0, "\xff\x0a"),
+  MAGIC("JXL", 0, "\x00\x00\x00\x0c\x4a\x58\x4c\x20\x0d\x0a\x87\x0a"),
   MAGIC("MAT", 0, "MATLAB 5.0 MAT-file,"),
   MAGIC("MIFF", 0, "Id=ImageMagick"),
   MAGIC("MIFF", 0, "id=ImageMagick"),
@@ -148,6 +150,7 @@ StaticMagic[] =
   MAGIC("SVG", 1, "?xml"),
   MAGIC("TIFF", 0, "\115\115\000\052"),
   MAGIC("TIFF", 0, "\111\111\052\000"),
+  MAGIC("TOPOL", 0, "                    "),
   MAGIC("BIGTIFF", 0, "\115\115\000\053\000\010\000\000"),
   MAGIC("BIGTIFF", 0, "\111\111\053\000\010\000\000\000"),
   MAGIC("VICAR", 0, "LBLSIZE"),
@@ -206,7 +209,7 @@ DestroyMagicInfo(void)
 %  bytes and sets/updates the provided file format string buffer. The value
 %  MagickPass is returned if the format was successfully identified.  The
 %  value MagickFail is returned if the format was not identified or an
-%  exception occured.
+%  exception occurred.
 %
 %
 %  The format of the GetMagickFileFormat method is:

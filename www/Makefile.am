@@ -1,4 +1,4 @@
-# Copyright (C) 2008 - 2021 GraphicsMagick Group
+# Copyright (C) 2008 - 2024 GraphicsMagick Group
 
 # This program is covered by multiple licenses, which are described in
 # Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -57,7 +57,9 @@ RST2HTML_TARGETS = \
 	$(WWWDIR)/ChangeLog-2019.html \
 	$(WWWDIR)/ChangeLog-2020.html \
 	$(WWWDIR)/ChangeLog-2021.html \
-	$(WWWDIR)/Changelog.html \
+	$(WWWDIR)/ChangeLog-2022.html \
+	$(WWWDIR)/ChangeLog-2023.html \
+	$(WWWDIR)/ChangeLog.html \
 	$(WWWDIR)/Changes.html \
 	$(WWWDIR)/Copyright.html \
 	$(WWWDIR)/FAQ.html \
@@ -176,7 +178,9 @@ WWW_HTML_FILES = \
 	$(WWWDIR)/ChangeLog-2019.html \
 	$(WWWDIR)/ChangeLog-2020.html \
 	$(WWWDIR)/ChangeLog-2021.html \
-	$(WWWDIR)/Changelog.html \
+	$(WWWDIR)/ChangeLog-2022.html \
+	$(WWWDIR)/ChangeLog-2023.html \
+	$(WWWDIR)/ChangeLog.html \
 	$(WWWDIR)/Changes.html \
 	$(WWWDIR)/Copyright.html \
 	$(WWWDIR)/FAQ.html \
@@ -250,102 +254,134 @@ WWW_MAINTAINER_TARGETS=$(WWW_HTML_FILES) $(WWWDIR)/color.html
 if MAINTAINER_MODE
 
 NAMED_COLORS=$(top_srcdir)/scripts/named_colors.py
-RST2HTMLDECO=$(top_srcdir)/scripts/rst2htmldeco.py
+RST2HTML5=$(top_srcdir)/scripts/rst2html5.py
 RELPATH=$(top_srcdir)/scripts/relpath.py
 OMP_DECIMAL_ALIGN=$(top_srcdir)/scripts/omp_decimal_align.py
-RST2HTML_COMMAND = $(RST2HTMLDECO) --cloak-email-addresses --link-stylesheet=docutils-articles.css
 
 $(RST2HTML_TARGETS) : \
 	$(top_srcdir)/scripts/html_fragments.py \
-	$(top_srcdir)/scripts/rst2htmldeco.py \
+	$(top_srcdir)/scripts/rst2html5.py \
 	$(top_srcdir)/scripts/omp_decimal_align.py \
 	$(WWWDIR)/Makefile.am
 
-# Build HTML version of RST file
+# Build HTML version of RST file (with "txt" extension)
 $(top_srcdir)/www/%.html: $(top_srcdir)/%.txt
-	$(RST2HTMLDECO) --link-stylesheet=`$(RELPATH) $(top_srcdir)/www $@`docutils-articles.css \
-	--url-prefix=`$(RELPATH) $(top_srcdir)/www $@` $< $@
+	@printf "Updating $@ ...\n"
+	$(RST2HTML5) --stylesheet=`$(RELPATH) $(top_srcdir)/www $@`docutils-articles.css --url-prefix=`$(RELPATH) $(top_srcdir)/www $@` $<  > $@
 
+# Build HTML version of RST file
 $(top_srcdir)/%.html: $(top_srcdir)/%.rst
-	$(RST2HTMLDECO)  --link-stylesheet=`$(RELPATH) $(top_srcdir)/www $@`docutils-articles.css \
-	--url-prefix=`$(RELPATH) $(top_srcdir)/www $@` $< | $(OMP_DECIMAL_ALIGN) > $@
+	@printf "Updating $@ ...\n"
+	$(RST2HTML5)  --stylesheet=`$(RELPATH) $(top_srcdir)/www $@`docutils-articles.css --url-prefix=`$(RELPATH) $(top_srcdir)/www $@` $<  | $(OMP_DECIMAL_ALIGN) > $@
 
 #
 # Build HTML version of ChangeLogs
 #
 CHANGELOG2RST=$(top_srcdir)/scripts/changelog2rst.sh
 
-$(top_srcdir)/www/Changelog.rst: $(top_srcdir)/ChangeLog
-	$(CHANGELOG2RST) < $^ > $@
+$(top_srcdir)/www/ChangeLog.rst: $(top_srcdir)/ChangeLog
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog' < $^ > $@
+
+$(top_srcdir)/www/ChangeLog-2023.rst: $(top_srcdir)/ChangeLog.2023
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2023' < $^ > $@
+
+$(top_srcdir)/www/ChangeLog-2022.rst: $(top_srcdir)/ChangeLog.2022
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2022' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2021.rst: $(top_srcdir)/ChangeLog.2021
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2021' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2020.rst: $(top_srcdir)/ChangeLog.2020
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2020' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2019.rst: $(top_srcdir)/ChangeLog.2019
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2019' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2018.rst: $(top_srcdir)/ChangeLog.2018
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2018' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2017.rst: $(top_srcdir)/ChangeLog.2017
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2017' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2016.rst: $(top_srcdir)/ChangeLog.2016
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2016' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2015.rst: $(top_srcdir)/ChangeLog.2015
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2015' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2014.rst: $(top_srcdir)/ChangeLog.2014
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2014' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2013.rst: $(top_srcdir)/ChangeLog.2013
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2013' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2012.rst: $(top_srcdir)/ChangeLog.2012
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2012' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2011.rst: $(top_srcdir)/ChangeLog.2011
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2011' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2010.rst: $(top_srcdir)/ChangeLog.2010
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2010' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2009.rst: $(top_srcdir)/ChangeLog.2009
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2009' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2008.rst: $(top_srcdir)/ChangeLog.2008
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2008' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2007.rst: $(top_srcdir)/ChangeLog.2007
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2007' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2006.rst: $(top_srcdir)/ChangeLog.2006
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2006' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2005.rst: $(top_srcdir)/ChangeLog.2005
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2005' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2004.rst: $(top_srcdir)/ChangeLog.2004
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2004' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2003.rst: $(top_srcdir)/ChangeLog.2003
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2003' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2002.rst: $(top_srcdir)/ChangeLog.2002
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2002' < $^ > $@
 
 $(top_srcdir)/www/ChangeLog-2001.rst: $(top_srcdir)/ChangeLog.2001
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'GraphicsMagick ChangeLog - 2001' < $^ > $@
 
 $(top_srcdir)/www/Magick++/ChangeLog.rst: $(top_srcdir)/Magick++/ChangeLog
-	$(CHANGELOG2RST) < $^ > $@
+	@printf "Updating $@ ...\n"
+	$(CHANGELOG2RST) 'Magick++ ChangeLog' < $^ > $@
 
 # Build color.html
 $(WWWDIR)/color.html : $(NAMED_COLORS)
+	@printf "Updating $@ ...\n"
 	$(NAMED_COLORS) > $@
 
 endif # MAINTAINER_MODE

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 - 2020 GraphicsMagick Group
+  Copyright (C) 2003 - 2022 GraphicsMagick Group
   Copyright (C) 2002 ImageMagick Studio
 
   This program is covered by multiple licenses, which are described in
@@ -535,14 +535,9 @@ extern int vsnprintf(char *s, size_t n, const char *format, va_list ap);
 /*
   Common const definitions
 */
-#define BackgroundColor "#ffffffffffff"  /* white */
-#define BorderColor "#dfdfdfdfdfdf"  /* gray */
 #define DefaultTileFrame "15x15+3+3"
 #define DefaultTileGeometry "120x120+4+3>"
 #define DefaultTileLabel "%f\n%wx%h\n%b"
-#define ForegroundColor "#000000000000"  /* black */
-#define HighlightColor "#f1f100001e1e" /* light red */
-#define MatteColor "#bdbdbdbdbdbd"  /* gray */
 #define PSDensityGeometry "72.0x72.0"
 #define PSPageGeometry "612x792>"
 
@@ -553,6 +548,17 @@ extern int vsnprintf(char *s, size_t n, const char *format, va_list ap);
 
 #define DefaultCompressionQuality 75U
 
+#if 0 /* Enable deprecation warnings */
+extern char *strcpy (char *restrict dest, const char *restrict src)
+  MAGICK_FUNC_DEPRECATED;
+
+extern char *strcat (char *restrict dest, const char *restrict src)
+  MAGICK_FUNC_DEPRECATED;
+
+extern int sprintf (char *restrict s,
+                    const char *restrict format, ...)
+  MAGICK_FUNC_DEPRECATED;
+#endif
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

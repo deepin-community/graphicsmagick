@@ -17,7 +17,7 @@ PACKAGE_BUGREPORT='graphicsmagick-bugs@lists.sourceforge.net'
 
 # Package base version.  This is is the numeric version suffix applied to
 # PACKAGE_NAME (e.g. "1.2").
-PACKAGE_VERSION='1.3.38'
+PACKAGE_VERSION='1.3.43'
 
 #
 # Package name plus version string.
@@ -27,8 +27,8 @@ PACKAGE_STRING="$PACKAGE_NAME $PACKAGE_VERSION"
 #
 # Formal Package release date
 # Set to string "unreleased" if package is not a formal release.
-PACKAGE_RELEASE_DATE="2022-03-26"
-#PACKAGE_RELEASE_DATE="unreleased"
+#PACKAGE_RELEASE_DATE="2017-12-11"
+PACKAGE_RELEASE_DATE="2024-03-23"
 
 #
 # Date of last ChangeLog update
@@ -50,7 +50,7 @@ fi
 #
 # Mercurial branch that this release is on.
 #
-HG_BRANCH_TAG=GraphicsMagick-1_3
+HG_BRANCH_TAG=default
 
 #
 # Libtool library revision control info
@@ -86,20 +86,20 @@ HG_BRANCH_TAG=GraphicsMagick-1_3
 #
 # Magick library versioning
 #
-MAGICK_LIBRARY_CURRENT=27
+MAGICK_LIBRARY_CURRENT=28
 MAGICK_LIBRARY_REVISION=0
-MAGICK_LIBRARY_AGE=24
+MAGICK_LIBRARY_AGE=25
 
 #
 # Magick++ library versioning
 #
-MAGICK_PLUS_PLUS_LIBRARY_CURRENT=18
+MAGICK_PLUS_PLUS_LIBRARY_CURRENT=20
 MAGICK_PLUS_PLUS_LIBRARY_REVISION=0
-MAGICK_PLUS_PLUS_LIBRARY_AGE=6
+MAGICK_PLUS_PLUS_LIBRARY_AGE=8
 
 #
 # Magick Wand library versioning
 #
-MAGICK_WAND_LIBRARY_CURRENT=11
-MAGICK_WAND_LIBRARY_REVISION=7
-MAGICK_WAND_LIBRARY_AGE=9
+MAGICK_WAND_LIBRARY_CURRENT=12
+MAGICK_WAND_LIBRARY_REVISION=0
+MAGICK_WAND_LIBRARY_AGE=10

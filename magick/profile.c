@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -272,8 +272,8 @@ DeleteImageProfile(Image *image,const char *name)
 %
 %    o image: The image.
 %
-%    o name: Profile name. Valid names are "8BIM", "ICM", "IPTC", "XMP" or any
-%                          unique text string.
+%    o name: Profile name. Valid names are "8BIM", "EXIF", "ICM", "IPTC",
+%              "XMP" or any unique text string.
 %
 %    o length: Updated with profile length if profile is present.  Set to NULL
 %              if length is not needed.
@@ -551,7 +551,7 @@ ProfileImagePixels(void *mutable_data,         /* User provided mutable data */
           pixels[i].green=ScaleShortToQuantum(beta.green);
           pixels[i].blue=ScaleShortToQuantum(beta.blue);
         }
-      if (image->matte)
+      if ((image->matte) && (NULL != indexes))
         {
           if ((source_colorspace == CMYKColorspace) &&
               (target_colorspace != CMYKColorspace))
@@ -1150,7 +1150,7 @@ ProfileImage(Image *image,const char *name,unsigned char *profile,
         verify that the colorspace of the new profile is valid for the
         colorspace of the image. If LCMS is not available we should
         refuse to assign a new profile (just like we're refusing a
-        conversion above) as we can't be sure the assigment is valid.
+        conversion above) as we can't be sure the assignment is valid.
         We might be trying to assign a CMYK profile to an RGB image,
         for instance.
       */
@@ -1202,8 +1202,8 @@ ProfileImage(Image *image,const char *name,unsigned char *profile,
 %
 %    o image: The image.
 %
-%    o name: Profile name. Valid names are "8BIM", "ICM", "IPTC", XMP, or any
-%                          unique text string.
+%    o name: Profile name. Valid names are "8BIM", EXIF, "ICM", "IPTC",
+%               XMP, or any unique text string.
 %
 %    o profile: Address of profile to add. Pass zero to remove an existing
 %               profile.

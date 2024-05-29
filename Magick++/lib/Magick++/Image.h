@@ -1,6 +1,6 @@
 // This may look like C code, but it is really -*- C++ -*-
 //
-// Copyright Bob Friesenhahn, 1999 - 2020
+// Copyright Bob Friesenhahn, 1999 - 2022
 //
 // Definition of Image, the representation of a single image in Magick++
 //
@@ -305,10 +305,10 @@ namespace Magick
     // Draw on image using a drawable list
     void            draw ( const std::list<Magick::Drawable> &drawable_ );
 
-    // Edge image (hilight edges in image)
+    // Edge image (highlight edges in image)
     void            edge ( const double radius_ = 0.0 );
 
-    // Emboss image (hilight edges with 3D effect)
+    // Emboss image (highlight edges with 3D effect)
     // The radius_ parameter specifies the radius of the Gaussian, in
     // pixels, not counting the center pixel.  The sigma_ parameter
     // specifies the standard deviation of the Laplacian, in pixels.
@@ -492,7 +492,7 @@ namespace Magick
     // pixels, not counting the center pixel.  The sigma_ parameter
     // specifies the standard deviation of the Laplacian, in pixels.
     // The angle_ parameter specifies the angle the object appears
-    // to be comming from (zero degrees is from the right).
+    // to be coming from (zero degrees is from the right).
     void            motionBlur ( const double radius_,
                                  const double sigma_,
                                  const double angle_ );
@@ -698,7 +698,7 @@ namespace Magick
     // photographic film to light during the development process)
     void            solarize ( const double factor_ = 50.0 );
 
-    // Spread pixels randomly within image by specified ammount
+    // Spread pixels randomly within image by specified amount
     void            spread ( const unsigned int amount_ = 3 );
 
     // Add a digital watermark to the image (based on second image)
@@ -753,7 +753,7 @@ namespace Magick
     //    the percentage of the difference between the original and
     //    the blur image that is added back into the original.
     // threshold_
-    //   the threshold in pixels needed to apply the diffence amount.
+    //   the threshold in pixels needed to apply the difference amount.
     void            unsharpmask ( const double radius_,
                                   const double sigma_,
                                   const double amount_,
@@ -905,7 +905,8 @@ namespace Magick
 
     // Colormap size (number of colormap entries)
     void            colorMapSize ( const unsigned int entries_ );
-    unsigned int    colorMapSize ( void );
+    unsigned int    colorMapSize ( void ) const;
+    unsigned int    colorMapSize ( void ); // Deprecate?
 
     // Image Color Space
     void            colorSpace( const ColorspaceType colorSpace_ );
@@ -1305,21 +1306,24 @@ namespace Magick
 
 
     // Transfers read-only pixels from the image to the pixel cache as
-    // defined by the specified region
+    // defined by the specified region.
     const PixelPacket* getConstPixels ( const int x_, const int y_,
                                         const unsigned int columns_,
                                         const unsigned int rows_ ) const;
 
-    // Obtain mutable image pixel indexes (valid for PseudoClass images)
+    // Obtain mutable image pixel indexes (valid for PseudoClass
+    // images).  The selected region is defined by the prior
+    // getPixels(), getConstPixels(), or setPixels() call.
     IndexPacket* getIndexes ( void );
 
-    // Obtain immutable image pixel indexes (valid for PseudoClass images)
+    // Obtain immutable image pixel indexes (valid for PseudoClass
+    // images). The selected region is defined by a prior getPixels(),
+    // getConstPixels(), or setPixels() call.
     const IndexPacket* getConstIndexes ( void ) const;
 
     // Transfers pixels from the image to the pixel cache as defined
     // by the specified region. Modified pixels may be subsequently
-    // transferred back to the image via syncPixels.  This method is
-    // valid for DirectClass images.
+    // transferred back to the image via syncPixels.
     PixelPacket* getPixels ( const int x_, const int y_,
                              const unsigned int columns_,
                              const unsigned int rows_ );

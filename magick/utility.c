@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (c) 2000 Markus Friedl.  All rights reserved.
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
@@ -690,7 +690,7 @@ MagickExport void DefineClientPathAndName(const char *path)
       char
         component[MaxTextExtent];
 
-      /* This is the path only - inluding the parent folder */
+      /* This is the path only - including the parent folder */
       GetPathComponent(path,HeadPath,component);
       (void) SetClientPath(component);
       /* This is the file name AND the extension - of present */
@@ -831,11 +831,14 @@ MagickExport void ExpandFilename(char *filename)
       struct  passwd
         pwd;
 
+      long
+        pwnam_buf_len_s;
+
       size_t
         pwnam_buf_len;
 
       char
-        *pwnam_buf;
+        *pwnam_buf = (char *) NULL;
 #  endif /* if defined(HAVE_GETPWNAM_R) */
 
       struct passwd
@@ -851,7 +854,11 @@ MagickExport void ExpandFilename(char *filename)
 
 #  if defined(HAVE_GETPWNAM_R)
       entry=(struct passwd *) NULL;
-      pwnam_buf_len = sysconf(_SC_GETPW_R_SIZE_MAX);
+      errno = 0;
+      pwnam_buf_len_s = sysconf(_SC_GETPW_R_SIZE_MAX);
+      if (pwnam_buf_len_s <= 0)
+        return;
+      pwnam_buf_len = (size_t) pwnam_buf_len_s;
       pwnam_buf=MagickAllocateMemory(char *,pwnam_buf_len);
       if (pwnam_buf != (char *) NULL)
         (void) getpwnam_r(username,&pwd,pwnam_buf,pwnam_buf_len,&entry);
@@ -863,8 +870,8 @@ MagickExport void ExpandFilename(char *filename)
           (void) strncpy(expanded_filename,entry->pw_dir,MaxTextExtent-1);
           if (p != (char *) NULL)
             {
-              (void) strcat(expanded_filename,"/");
-              (void) strlcat(expanded_filename,p+1,MaxTextExtent);
+              (void) strlcat(expanded_filename,"/",sizeof(expanded_filename));
+              (void) strlcat(expanded_filename,p+1,sizeof(expanded_filename));
             }
         }
 #  if defined(HAVE_GETPWNAM_R)
@@ -1007,14 +1014,20 @@ MagickExport MagickPassFail ExpandFilenames(int *argc,char ***argv)
                     {
                       if ((number_files % prealloc_entries) == 0)
                         {
-                          MagickReallocMemory(char **,vector,
-                                              MagickArraySize((size_t) *argc+count+prealloc_entries,
-                                              sizeof(char *)));
-                          if (vector == (char **) NULL)
+                          char **new_vector;
+                          new_vector=
+                            (char **) MagickReallocStd(vector,
+                                                       MagickArraySize((size_t) *argc+count+prealloc_entries,
+                                                                       sizeof(char *)));
+                          if (new_vector == (char **) NULL)
                             {
+                              for (j=0 ; j < count; j++)
+                                MagickFreeMemory(vector[j]);
+                              MagickFreeMemory(vector);
                               fclose(file);
                               return(MagickFail);
                             }
+                          vector = new_vector;
                         }
 
                       if (first)
@@ -1104,10 +1117,21 @@ MagickExport MagickPassFail ExpandFilenames(int *argc,char ***argv)
         There's at least one matching filename.
         Transfer file list to argument vector.
       */
-      MagickReallocMemory(char **,vector,
-                          MagickArraySize((size_t) *argc+count+number_files+prealloc_entries,sizeof(char *)));
-      if (vector == (char **) NULL)
-        return(MagickFail);
+      {
+         char **new_vector;
+         new_vector =
+           (char **) MagickReallocStd(vector,
+                                      MagickArraySize((size_t) *argc+count+number_files+prealloc_entries,
+                                                      sizeof(char *)));
+         if (new_vector == (char **) NULL)
+           {
+             for (j=0 ; j < count; j++)
+               MagickFreeMemory(vector[j]);
+             MagickFreeMemory(vector);
+             return(MagickFail);
+           }
+         vector=new_vector;
+      }
 
       first=MagickTrue;
       for (j=0; j < number_files; j++)
@@ -1216,12 +1240,12 @@ MagickExport void FormatSize(const magick_int64_t size,char *format)
     {
     default: break;
     case 0: break;
-    case 1: (void) strcat(format,"Ki"); break; /* kilo, 10^3 */
-    case 2: (void) strcat(format,"Mi"); break; /* mega, 10^6 */
-    case 3: (void) strcat(format,"Gi"); break; /* giga, 10^9 */
-    case 4: (void) strcat(format,"Ti"); break; /* tera, 10^12 */
-    case 5: (void) strcat(format,"Pi"); break; /* peta, 10^15 */
-    case 6: (void) strcat(format,"Ei"); break; /* exa,  10^18 */
+    case 1: (void) strlcat(format,"Ki",MaxTextExtent); break; /* kilo, 10^3 */
+    case 2: (void) strlcat(format,"Mi",MaxTextExtent); break; /* mega, 10^6 */
+    case 3: (void) strlcat(format,"Gi",MaxTextExtent); break; /* giga, 10^9 */
+    case 4: (void) strlcat(format,"Ti",MaxTextExtent); break; /* tera, 10^12 */
+    case 5: (void) strlcat(format,"Pi",MaxTextExtent); break; /* peta, 10^15 */
+    case 6: (void) strlcat(format,"Ei",MaxTextExtent); break; /* exa,  10^18 */
     }
 }
 
@@ -1589,7 +1613,10 @@ MagickExport MagickPassFail GetExecutionPathUsingName(char *path)
 %  A description of each parameter follows:
 %
 %    o flags:  Method GetGeometry returns a bitmask that indicates
-%      which of the four values were located in the geometry string.
+%      which of the values from GeometryFlags (XValue, YValue, WidthValue,
+%      HeightValue, XNegative, YNegative, PercentValue, AspectValue, LessValue,
+%      GreaterValue, AreaValue, MinimumValue) were located in the geometry
+%      string.
 %
 %    o image_geometry:  Specifies a character string representing the geometry
 %      specification.
@@ -1602,6 +1629,8 @@ MagickExport MagickPassFail GetExecutionPathUsingName(char *path)
 %
 %
 */
+#define MagickULongRangeOk(double_val) ((double_val <= (double) ULONG_MAX) && (double_val >= 0.0))
+#define MagickLongRangeOk(double_val) ((double_val <= (double) LONG_MAX) && (double_val >= (double) LONG_MIN))
 MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
   unsigned long *width,unsigned long *height)
 {
@@ -1740,8 +1769,12 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
       count=MagickStrToD(p,&q,&double_val);
       if (count)
         {
-          bounds.width=(unsigned long) floor(double_val+0.5);
-          flags|=WidthValue;
+          double_val=floor(double_val+0.5);
+          if (MagickULongRangeOk(double_val))
+            {
+              bounds.width=(unsigned long) double_val;
+              flags|=WidthValue;
+            }
         }
       if ((*q == 'x') || (*q == 'X') || ((flags & AreaValue) && (*q == '\0')))
         p=q;
@@ -1750,9 +1783,13 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
           count=MagickStrToD(p,&p,&double_val);
           if (count)
             {
-              bounds.width=(unsigned long) floor(double_val+0.5);
-              bounds.height=bounds.width;
-              flags|=HeightValue;
+              double_val=floor(double_val+0.5);
+              if (MagickULongRangeOk(double_val))
+                {
+                  bounds.width=(unsigned long) double_val;
+                  bounds.height=bounds.width;
+                  flags|=HeightValue;
+                }
             }
         }
     }
@@ -1766,8 +1803,12 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
       count=MagickStrToD(p,&p,&double_val);
       if (count)
         {
-          bounds.height=(unsigned long) floor(double_val+0.5);
-          flags|=HeightValue;
+          double_val=floor(double_val+0.5);
+          if (MagickULongRangeOk(double_val))
+            {
+              bounds.height=(unsigned long) double_val;
+              flags|=HeightValue;
+            }
         }
     }
   if ((*p == '+') || (*p == '-'))
@@ -1780,7 +1821,15 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
           p++;
           q=p;
           count=MagickStrToD(p,&p,&double_val);
-          bounds.x=(long) ceil(double_val-0.5);
+          if (count)
+            {
+              double_val=ceil(double_val-0.5);
+              if (MagickLongRangeOk(double_val))
+                {
+                  bounds.x=(long) double_val;
+                  flags|=XValue;
+                }
+            }
         }
       else
         {
@@ -1789,12 +1838,15 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
           count=MagickStrToD(p,&p,&double_val);
           if (count)
             {
-              bounds.x=(long) ceil(-double_val-0.5);
-              flags|=XNegative;
+              double_val=ceil(-double_val-0.5);
+              if (MagickLongRangeOk(double_val))
+                {
+                  bounds.x=(long) double_val;
+                  flags|=XValue;
+                  flags|=XNegative;
+                }
             }
         }
-      if (count)
-        flags|=XValue;
       if ((*p == '+') || (*p == '-'))
         {
           /*
@@ -1805,7 +1857,15 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
               p++;
               q=p;
               count=MagickStrToD(p,&p,&double_val);
-              bounds.y=(long) ceil(double_val-0.5);
+              if (count)
+                {
+                  double_val = ceil(double_val-0.5);
+                  if (MagickLongRangeOk(double_val))
+                    {
+                      bounds.y=(long) double_val;
+                      flags|=YValue;
+                    }
+                }
             }
           else
             {
@@ -1814,12 +1874,15 @@ MagickExport int GetGeometry(const char *image_geometry,long *x,long *y,
               count=MagickStrToD(p,&p,&double_val);
               if (count)
                 {
-                  bounds.y=(long) ceil(-double_val-0.5);
-                  flags|=YNegative;
+                  double_val=ceil(-double_val-0.5);
+                  if (MagickLongRangeOk(double_val))
+                    {
+                      bounds.y=(long) ceil(double_val);
+                      flags|=YValue;
+                      flags|=YNegative;
+                    }
                 }
             }
-          if (count)
-            flags|=YValue;
         }
     }
   if (*p != '\0')
@@ -1876,7 +1939,7 @@ static int MagickStrToD(const char *start,char **end,double *value)
 
   char
     buff[MaxTextExtent],
-    *endptr;
+    *estr;
 
   int
     i,
@@ -1888,10 +1951,32 @@ static int MagickStrToD(const char *start,char **end,double *value)
     buff[i]=*p++;
   buff[i]=0;
   errno=0;
-  *value=strtod(buff,&endptr);
-  if ((errno == 0) && (buff != endptr))
-    n++;
-  *end=(char *) start+(endptr-buff);
+  *value=strtod(buff,&estr);
+  if (buff == estr)
+    {
+      *value=0.0;
+    }
+#if defined(INFINITY)
+  else if ((*value == +INFINITY) || (*value == -INFINITY))
+    {
+      *value=0.0;
+      errno=ERANGE;
+    }
+#endif
+  else if (isnan(*value))
+    {
+      *value=0.0;
+      errno=ERANGE;
+    }
+  /*
+    Warning: Visual Studio 2008 64-bit returns errno 34 "Result too
+    large", even though a correct value is returned!
+  */
+  else if (errno == 0)
+    {
+      n++;
+    }
+  *end=(char *) start+(estr-buff);
 
   return (n);
 }
@@ -2184,6 +2269,10 @@ MagickExport int GetMagickGeometry(const char *geometry,long *x,long *y,
             }
           *width=(unsigned long) floor(scale_factor*former_width+0.5);
           *height=(unsigned long) floor(scale_factor*former_height+0.5);
+
+          /* Width and height can not be zero! */
+          *width=Max(*width,1);
+          *height=Max(*height,1);
         }
       if (flags & GreaterValue) /* > */
         {
@@ -2343,7 +2432,7 @@ MagickExport char *GetPageGeometry(const char *page_geometry)
         flags=GetGeometry(page,&geometry.x,&geometry.y,&geometry.width,
           &geometry.height);
         if (!(flags & GreaterValue))
-          (void) strcat(page,">");
+          (void) strlcat(page,">",sizeof(page));
         break;
       }
   return (AcquireString(page));
@@ -2914,7 +3003,7 @@ MagickExport MagickBool IsAccessible(const char *path)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  IsAccessibleNoLogging() returns MagickTrue if the file as defined by path
-%  exists and is accessable by the user. This version is used internally to
+%  exists and is accessible by the user. This version is used internally to
 %  avoid using the error logging of the normal version.
 %
 %  The format of the IsAccessibleNoLogging method is:
@@ -3671,6 +3760,221 @@ MagickExport long MagickDoubleToLong(const double dval/*, ExceptionInfo *excepti
 }
 
 /*
+  Convert a double to an int, with clipping.
+  Someday a warning or an error may be produced here.
+*/
+MagickExport int MagickDoubleToInt(const double dval/*, ExceptionInfo *exception*/)
+{
+  int lval;
+
+  do
+    {
+#if defined(INFINITY)
+      if (dval == +INFINITY)
+        {
+          lval=INT_MAX;
+          break;
+        }
+      if (dval == -INFINITY)
+        {
+          lval=INT_MIN;
+          break;
+        }
+#endif
+      if (isnan(dval))
+        {
+          lval=0;
+          break;
+        }
+      if (floor(dval) > ((double) INT_MAX - 1))
+        {
+          lval=INT_MAX;
+          break;
+        }
+      if (ceil(dval) < ((double) INT_MIN + 1))
+        {
+          lval=INT_MIN;
+          break;
+        }
+      lval=(int) dval;
+    } while (0);
+
+  return lval;
+}
+
+/*
+  Convert a double to an unsigned long, with clipping.
+  Someday a warning or an error may be produced here.
+*/
+MagickExport unsigned long MagickDoubleToULong(const double dval/*, ExceptionInfo *exception*/)
+{
+  unsigned long lval;
+
+  do
+    {
+#if defined(INFINITY)
+      if (dval == +INFINITY)
+        {
+          lval=ULONG_MAX;
+          break;
+        }
+      if (dval == -INFINITY)
+        {
+          lval=0;
+          break;
+        }
+#endif
+      if (isnan(dval))
+        {
+          lval=0;
+          break;
+        }
+      if (floor(dval) > ((double) ULONG_MAX - 1))
+        {
+          lval=ULONG_MAX;
+          break;
+        }
+      if (ceil(dval) < 0.0)
+        {
+          lval=0;
+          break;
+        }
+      lval=(unsigned long) dval;
+    } while (0);
+
+  return lval;
+}
+
+/*
+  Convert a double to an unsigned int, with clipping.
+  Someday a warning or an error may be produced here.
+*/
+MagickExport unsigned int MagickDoubleToUInt(const double dval/*, ExceptionInfo *exception*/)
+{
+  unsigned int lval;
+
+  do
+    {
+#if defined(INFINITY)
+      if (dval == +INFINITY)
+        {
+          lval=UINT_MAX;
+          break;
+        }
+      if (dval == -INFINITY)
+        {
+          lval=0;
+          break;
+        }
+#endif
+      if (isnan(dval))
+        {
+          lval=0;
+          break;
+        }
+      if (floor(dval) > ((double) UINT_MAX - 1))
+        {
+          lval=UINT_MAX;
+          break;
+        }
+      if (ceil(dval) < 0.0)
+        {
+          lval=0;
+          break;
+        }
+      lval=(unsigned int) dval;
+    } while (0);
+
+  return lval;
+}
+
+/*
+  Convert a double to a short, with clipping.
+  Someday a warning or an error may be produced here.
+*/
+MagickExport short int MagickDoubleToShort(const double dval/*, ExceptionInfo *exception*/)
+{
+  short int lval;
+
+  do
+    {
+#if defined(INFINITY)
+      if (dval == +INFINITY)
+        {
+          lval=SHRT_MAX;
+          break;
+        }
+      if (dval == -INFINITY)
+        {
+          lval=SHRT_MIN;
+          break;
+        }
+#endif
+      if (isnan(dval))
+        {
+          lval=0;
+          break;
+        }
+      if (floor(dval) > ((double) SHRT_MAX - 1))
+        {
+          lval=SHRT_MAX;
+          break;
+        }
+      if (ceil(dval) < ((double) SHRT_MIN + 1))
+        {
+          lval=SHRT_MIN;
+          break;
+        }
+      lval=(short int) dval;
+    } while (0);
+
+  return lval;
+}
+
+/*
+  Convert a double to an unsigned short, with clipping.
+  Someday a warning or an error may be produced here.
+*/
+MagickExport unsigned short int MagickDoubleToUShort(const double dval/*, ExceptionInfo *exception*/)
+{
+  unsigned short int lval;
+
+  do
+    {
+#if defined(INFINITY)
+      if (dval == +INFINITY)
+        {
+          lval=USHRT_MAX;
+          break;
+        }
+      if (dval == -INFINITY)
+        {
+          lval=0;
+          break;
+        }
+#endif
+      if (isnan(dval))
+        {
+          lval=0;
+          break;
+        }
+      if (floor(dval) > ((double) USHRT_MAX - 1))
+        {
+          lval=USHRT_MAX;
+          break;
+        }
+      if (ceil(dval) < 0.0)
+        {
+          lval=0;
+          break;
+        }
+      lval=(unsigned short int) dval;
+    } while (0);
+
+  return lval;
+}
+
+/*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
 %                                                                             %
@@ -3851,7 +4155,7 @@ MagickExport size_t MagickFormatString(char *string,
 %
 %    o returns: Size of the consumed token, not including a terminating
 %             null character.  If this is larger or equal to the buffer
-%             size then truncation has occured.
+%             size then truncation has occurred.
 %
 */
 MagickExport size_t MagickGetToken(const char *start,char **end,char *token,
@@ -4059,7 +4363,7 @@ MagickExport unsigned int MagickRandNewSeed(void)
 %  suffix (e.g. "100K" is 100 kilo) to a 64-bit integer type.  Even though
 %  this function returns a signed type, it is intended to be used to obtain
 %  positive size values so a negative return value indicates an error.
-%  Specfically, -1 is returned if there is known to be an conversion error.
+%  Specifically, -1 is returned if there is known to be an conversion error.
 %
 %  Binary Prefixes: http://en.wikipedia.org/wiki/Binary_prefix
 %
@@ -4554,7 +4858,7 @@ MagickExport MagickPassFail MagickCreateDirectoryPath(const char *dir,
 %
 %  MagickSceneFileName() uses a filename template and scene number
 %  in order to produce a unique filename for the scene.  If force is
-%  MagickFalse, then a substition is only performed if the template
+%  MagickFalse, then a substitution is only performed if the template
 %  contains a valid substitution specification.  If force is MagickTrue,
 %  then the additional scene template is applied so that the generated
 %  filename is assured to be distinguished by the scene number.
@@ -4724,7 +5028,7 @@ MagickExport size_t MagickStrlCat(char *dst, const char *src, const size_t size)
 %  terminated string src to dst, NULL-terminating the result. If size is
 %  zero, then the result is not NULL terminated.  The total length of the
 %  string which would have been created given sufficient buffer size (may
-%  be longer than size) is returned. This function is simlar to strlcpy()
+%  be longer than size) is returned. This function is similar to strlcpy()
 %  which is available under FreeBSD, Apple's OS-X, and Solaris 8 except
 %  that it is assured to work with overlapping objects.  FreeBSD does not
 %  document if strlcpy() handles overlapping objects, but Solaris strlcpy()
@@ -4808,7 +5112,7 @@ MagickExport size_t MagickStrlCpy(char *dst, const char *src, const size_t size)
 %  zero, then the result is not NULL terminated.  The number of bytes copied
 %  (not including the terminating NULL) is returned.  This function is a
 %  useful alternative to using MagickStrlCpy() when the actual size copied
-%  is more useful than knowledge that truncation occured.
+%  is more useful than knowledge that truncation occurred.
 %
 %  The format of the MagickStrlCat method is:
 %
@@ -5045,7 +5349,7 @@ MagickExport const char *SetClientPath(const char *path)
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  SetGeometry sets a grometry to its default values.
+%  SetGeometry sets a geometry to its default values.
 %
 %  The format of the SetGeometry method is:
 %
@@ -5931,8 +6235,9 @@ MagickExport int Tokenizer(TokenInfo *token_info,unsigned flag,char *token,
 %
 %  A description of each parameter follows:
 %
-%    o translated_text:  Method TranslateText returns the translated
-%      text string.
+%    o translated_text:  Method TranslateText returns a new allocation
+%      containing the translated text string.  If the translated text
+%      string would be empty, a NULL pointer is returned instead.
 %
 %    o image_info: The imageInfo (may be NULL!).
 %
@@ -6020,8 +6325,9 @@ MagickExport char *TranslateText(const ImageInfo *image_info,
 %
 %  A description of each parameter follows:
 %
-%    o translated_text:  Method TranslateText returns the translated
-%      text string.
+%    o translated_text:  Method TranslateTextEx returns a new allocation
+%      containing the translated text string.  If the translated text
+%      string would be empty, a NULL pointer is returned instead.
 %
 %    o image_info: The imageInfo (may be NULL!).
 %
@@ -6064,15 +6370,13 @@ MagickExport char *TranslateTextEx(const ImageInfo *image_info,
   /*
     Translate any embedded format characters.
   */
-  length=strlen(text)+MaxTextExtent;
-  translated_text=MagickAllocateMemory(char *,length);
+  length=strlen(text);
+  translated_text=MagickAllocateMemory(char *,length+MaxTextExtent);
   if (translated_text == (char *) NULL)
     return NULL;
-  /*
-    FIXME: Overlapping memory detected here where memory should not be overlapping.
-  */
-  (void) strlcpy(translated_text,text,length);
-  /* (void) memmove(translated_text,text,strlen(text)+1); */
+  (void) memcpy(translated_text,text,length);
+  translated_text[length]='\0';
+  length=length+MaxTextExtent;
   p=text;
   for (q=translated_text; *p != '\0'; p++)
   {
@@ -6478,7 +6782,7 @@ MagickExport char *TranslateTextEx(const ImageInfo *image_info,
           break;
         key[i]='\0';
 
-        /* Try to get the attibute from image */
+        /* Try to get the attribute from image */
         attribute=GetImageAttribute(image,key);
 
         /* Try to get the attribute from image_info */
@@ -6507,6 +6811,7 @@ MagickExport char *TranslateTextEx(const ImageInfo *image_info,
       }
       case '#':
       {
+        /* If 'ping' mode was used, then there may be no pixel cache! */
         if (GetPixelCachePresent(image))
           {
             (void) SignatureImage(image);

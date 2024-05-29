@@ -354,6 +354,12 @@
       <Message name="DecodedImageNotReturned">
         Coder did not return an image (this is a bug, please report it!)
       </Message>
+      <Message name="JXLDecoderAPIFailure">
+        JXL decoder API failure
+      </Message>
+      <Message name="JXLEncoderAPIFailure">
+        JXL encoder API failure
+      </Message>
     </Error>
     <FatalError>
       <Message name="Default">
@@ -1124,6 +1130,9 @@
       <Message name="UnableToSharpenImage">
         Unable to sharpen image
       </Message>
+      <Message name="UnableToSpreadImage">
+        Unable to spread image
+      </Message>
       <Message name="UnableToThresholdImage">
         Unable to threshold image
       </Message>
@@ -1569,6 +1578,9 @@
         </Message>
         <Message name="ReadLimitExceeded">
           Read limit exceeded (see -limit Read)
+        </Message>
+        <Message name="WriteLimitExceeded">
+          Write limit exceeded (see -limit Write)
         </Message>
       </Error>
       <FatalError>

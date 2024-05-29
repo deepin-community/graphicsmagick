@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2021 GraphicsMagick Group
+% Copyright (C) 2003-2023 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -70,7 +70,7 @@ MagickExport void Contrast(const int sign,Quantum *red,Quantum *green,
   Quantum *blue)
 {
   static const double
-    alpha=0.5+MagickEpsilon;
+    alpha=0.50000000000099997787827987849595956504344940185546875; /* 0.5+MagickEpsilon */
 
   double
     brightness,

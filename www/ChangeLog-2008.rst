@@ -1260,7 +1260,7 @@
   - magick/gem.c (GenerateNoise): Poisson noise generation was
     taking excessively long and producing wrong results.  Noise
     generation was only producing the correct amount of noise in the
-    Q8 build.	
+    Q8 build.       
     (GenerateDifferentialNoise): New function to return noise in a
     floating-point differential format.
 
@@ -1293,7 +1293,7 @@
 
   - coders/pict.c (ReadPICTImage): Ensure that row\_bytes calculation
     does not overflow.  Verify that RLE decode does not overflow
-    buffer.  Validate image frame dimensions.	
+    buffer.  Validate image frame dimensions.       
 
   - coders/palm.c (ReadPALMImage): Validate PALM bits per pixel and
     colormap indexes.
@@ -1539,7 +1539,7 @@
     overhead, which is increased in thread-safe applications.
 
   - magick/module.c (OpenModule): Ignore requests to open modules
-        which have already been opened.
+    which have already been opened.
 
   - GraphicsMagick.spec.in: Add --with-included-ltdl to the default
     options since this seems safest until the libltdl validation logic
@@ -1582,7 +1582,7 @@
     The test suite passes without it.
 
   - magick/magick.h (struct MagickInfo): There is no need for `name`
-    to be allocated data so make it const.	
+    to be allocated data so make it const.  
     (DestroyMagickInfo): Add a static function to destroy a MagickInfo
     structure.  Renamed previous DestroyMagickInfo to
     DestroyMagickInfoList and made it static.
@@ -1787,7 +1787,7 @@
 2008-04-03  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/{pcd.c,pcx.c,pdb.c,pict.c,stegano.c,wpg.c,xcf.c}:
-    Warnings reduction.	
+    Warnings reduction.     
 
   - magick/{channel.c,image.c,unix\_port.c,render.c}: Warnings
     reduction.
@@ -1906,7 +1906,7 @@
 
   - magick/utility.c (TranslateTextEx): Check if the pixel cache is
     initialized before using a function which requires using it.
-    Thanks to Micha³ Kowalczuk for bringing this issue to my
+    Thanks to Michal Kowalczuk for bringing this issue to my
     attention.
 
   - magick/attribute.c (SetImageAttribute): Only apply
@@ -2121,7 +2121,7 @@
   - magick/command.c (DisplayImageCommand): No longer default to
     reading standard input if stdin fails isatty() test.  This
     behavior was causing failure to launch from Gnome and it is
-    difficult to work around the issue from within a .desktop file.	
+    difficult to work around the issue from within a .desktop file. 
     (AnimateImageCommand): No longer default to
     reading standard input if stdin fails isatty() test.
 

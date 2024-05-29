@@ -18,6 +18,7 @@ GraphicsMagick Supported Formats
 .. _montage : montage.html
 
 .. _AVI : http://www.jmcgowan.com/avi.html
+.. _AVIF : https://aomediacodec.github.io/av1-avif/
 .. _BMP : http://www.fileformat.info/format/bmp/egff.htm
 .. _color : color.html
 .. _CALS : http://www.fileformat.info/format/cals/egff.htm
@@ -35,6 +36,8 @@ GraphicsMagick Supported Formats
 .. _JBIG : http://www.jpeg.org/
 .. _JNG : http://www.libmng.com/
 .. _JPEG : http://www.jpeg.org/
+.. _JXL : https://github.com/libjxl/libjxl/
+.. _JXLLOC : https://www.loc.gov/preservation/digital/formats/fdd/fdd000538.shtml
 .. _M2V : http://www.mpeg.org/
 .. _MIFF : miff.html
 .. _MNG : http://www.libmng.com/
@@ -78,7 +81,7 @@ associated magick string is stored in the "magick" member of the Image
 structure, and is reported in the default output of 'gm identify'.
 
 
-GraphicsMagick supports reading over 88 major file formats (not including
+GraphicsMagick supports reading over 92 major file formats (not including
 sub-formats). The following table provides a summary of the supported
 image formats.
 
@@ -90,6 +93,9 @@ image formats.
    |              |      |                           | Format originally used on the Macintosh          |
    | ART          | RW   | PFS: 1st Publisher        | (MacPaint?) and later used for PFS: 1st          |
    |              |      |                           | Publisher clip art.                              |
+   +--------------+------+---------------------------+--------------------------------------------------+
+   | AVIF_        | R    | AVIF Image File Format    | AV1 in a _HEIF container.  AVIF is supported     |
+   |              |      |                           | via libheif if it supports AVIF decode.          |
    +--------------+------+---------------------------+--------------------------------------------------+
    | AVS          | RW   | AVS X image               |                                                  |
    +--------------+------+---------------------------+--------------------------------------------------+
@@ -180,7 +186,7 @@ image formats.
    | FPX          | RW   | FlashPix Format           | Requires FlashPix SDK.                           |
    +--------------+------+---------------------------+--------------------------------------------------+
    |              |      |                           | 8-bit RGB PseudoColor with up to 256 palette     |
-   |              |      |                           | entires. Specify the format "GIF87" to write the |
+   |              |      |                           | entries. Specify the format "GIF87" to write the |
    |              |      | CompuServe Graphics       | older version 87a of the format.                 |
    | GIF_         | RW   | Interchange Format        |                                                  |
    |              |      |                           | The PNG format provides a superior set of        |
@@ -219,8 +225,10 @@ image formats.
    | JPC          | RW   | JPEG-2000 Code Stream     | Requires jasper_ 1.600.0 or later                |
    |              |      | Syntax                    |                                                  |
    +--------------+------+---------------------------+--------------------------------------------------+
-   | JPEG_        | RW   | Joint Photographic        | Requires jpegsrc.v6b.tar.gz                      |
+   | JPEG_        | RW   | Joint Photographic        | Requires jpegsrc.v6b.tar.gz or later             |
    |              |      | Experts Group JFIF format |                                                  |
+   +--------------+------+---------------------------+--------------------------------------------------+
+   | JXL_         | RW   | JPEG XL                   | Requires JPEG XL 0.7 or later                    |
    +--------------+------+---------------------------+--------------------------------------------------+
    | MAN          | R    | Unix reference manual     | Requires that GNU groff and Ghostcript are       |
    |              |      | pages                     | installed.                                       |
@@ -433,7 +441,7 @@ image formats.
    |              |      |                           | Requires libwmf. By default, renders WMF files   |
    |              |      |                           | using the dimensions specified by the metafile   |
    |              |      |                           | header. Use the -density option to adjust the    |
-   |              |      |                           | output resolution, and thereby adjust the ouput  |
+   |              |      |                           | output resolution, and thereby adjust the output |
    | WMF_         |      | Windows Metafile          | size. The default output resolution is 72DPI so  |
    |              |      |                           | "-density 144" results in an image twice as      |
    |              |      |                           | large as the default. Use -background color_ to  |

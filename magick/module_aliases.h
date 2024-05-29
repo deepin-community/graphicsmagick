@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2003 - 2019 GraphicsMagick Group
+  Copyright (C) 2003 - 2023 GraphicsMagick Group
 
   This program is covered by multiple licenses, which are described in
   Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -81,6 +81,9 @@ static const struct
     MODULEALIAS("ICM","META"),
     MODULEALIAS("ICO","ICON"),
     MODULEALIAS("ICODIB", "DIB"),
+    MODULEALIAS("IM1","SUN"),
+    MODULEALIAS("IM24","SUN"),
+    MODULEALIAS("IM8","SUN"),
     MODULEALIAS("IMAGE","LOGO"),
     MODULEALIAS("IPTC","META"),
     MODULEALIAS("IPTCTEXT","META"),
@@ -122,8 +125,11 @@ static const struct
     MODULEALIAS("PGX","JP2"),
     MODULEALIAS("PICON","XPM"),
     MODULEALIAS("PM","XPM"),
+    MODULEALIAS("PNG00","PNG"),
     MODULEALIAS("PNG24","PNG"),
     MODULEALIAS("PNG32","PNG"),
+    MODULEALIAS("PNG48","PNG"),
+    MODULEALIAS("PNG64","PNG"),
     MODULEALIAS("PNG8","PNG"),
     MODULEALIAS("PPM","PNM"),
     MODULEALIAS("PTIF","TIFF"),

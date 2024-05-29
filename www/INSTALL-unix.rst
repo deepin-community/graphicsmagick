@@ -93,6 +93,11 @@ and watch the configure script output to verify that it finds everything
 that you think it should. If it does not, then adjust your environment
 so that it does.
 
+If you are attempting to build a maximally-static build, then
+use --disable-shared and execute configure like::
+
+  PKG_CONFIG='pkg-config --static' ./configure
+
 By default, 'make install' will install the package's files
 in '/usr/local/bin', '/usr/local/man', etc. You can specify an
 installation prefix other than '/usr/local' by giving 'configure'
@@ -107,7 +112,7 @@ variables by specifying them on the configure command line, e.g.::
     ./configure CC=c99 CFLAGS=-O2 LIBS=-lposix
 
 Options which should be common to packages installed under the same
-directory heirarchy may be supplied via a 'config.site' file located
+directory hierarchy may be supplied via a 'config.site' file located
 under the installation prefix via the path ${prefix}/share/config.site
 where ${prefix} is the installation prefix. This file is used for all
 packages installed under that prefix. As an alternative, the CONFIG_SITE
@@ -338,9 +343,9 @@ Optional Packages/Options
 
     disable TIFF support
 
---without-trio
+--with-trio
 
-    disable TRIO library support
+    enable TRIO library support
 
 --without-ttf
 
@@ -631,7 +636,7 @@ Several configure options require special note:
   thread safe by using thread APIs to implement required locking.
   This is intended to allow the GraphicsMagick library to be used by
   multi-threaded programs using native POSIX threads. If the locking
-  or dependence on thread APIs is undesireable, then specify
+  or dependence on thread APIs is undesirable, then specify
   --without-threads.  Testing shows that the overhead from thread
   safety is virtually unmeasurable so usually there is no reason to
   disable multi-thread support.  While previous versions disabled
@@ -651,7 +656,7 @@ Several configure options require special note:
 
   By default, GraphicsMagick is compiled with support for OpenMP
   (http://www.openmp.org/) if the compilation environment supports it.
-  OpenMP automatically parallizes loops across concurrent threads
+  OpenMP automatically parallelizes loops across concurrent threads
   based on instructions in pragmas. OpenMP was introduced in GCC
   4.2. OpenMP is a well-established standard and was implemented in
   some other compilers in the late '90s, long before its appearance in
@@ -820,8 +825,10 @@ Several configure options require special note:
 JPEG XL
 -------
 
-JPEG XL seems to be a work in progress.  For development testing with
-it we build it as described on its git page
+JPEG XL seems to be a work in progress, with previous APIs being
+deprecated, and replacement APIs introduced.  We have taken an
+approach to use the latest recommended APIs.  For development testing
+with it (0.7.0 or later) we build it as described on its git page
 (https://github.com/libjxl/libjxl), but configure and build it like::
 
   git clone https://github.com/libjxl/libjxl.git --recursive --shallow-submodules
@@ -834,6 +841,9 @@ it we build it as described on its git page
   make test
   [ check for 100% tests passed ]
   make install
+
+While the JPEG XL project recommends using Clang, it is observed to
+work without known issues when compiled using GCC 9.4.0.
 
 Popular Distribution Packages
 -----------------------------
