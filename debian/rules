@@ -236,9 +236,9 @@ binary-arch: build-arch check install-arch
 	dh_strip -a --dbg-package=graphicsmagick-dbg
 	dh_compress -a
 	dh_fixperms -a
-	dh_makeshlibs -Nlibgraphicsmagick++-q16-12t64
-	dh_makeshlibs -plibgraphicsmagick++-q16-12t64 \
-		-V'libgraphicsmagick++-q16-12t64 (>= 1.3.26-5~)'
+	dh_makeshlibs -Nlibgraphicsmagick++-q16-12
+	dh_makeshlibs -plibgraphicsmagick++-q16-12 \
+		-V'libgraphicsmagick++-q16-12 (>= 1.3.26-5~)'
 	dh_installdeb -a
 	dh_perl -p libgraphics-magick-perl
 	dh_shlibdeps -a

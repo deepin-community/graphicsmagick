@@ -1,4 +1,4 @@
-libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3t64 #MINVER#
+libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3 #MINVER#
  AccessCacheViewPixels@Base 1.3.5
  AccessDefaultCacheView@Base 1.3.5
  AccessDefinition@Base 1.3.5
@@ -599,7 +599,6 @@ libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3t64 #MINVER#
  MagickSetConfirmAccessHandler@Base 1.3.8
  MagickSetFileAttributes@Base 1.3.24
  MagickSetFileSystemBlockSize@Base 1.3.8
- MagickSizeStrToInt64@Base 1.3.5
  MagickSpawnVP@Base 1.3.5
  MagickStripSpacesFromString@Base 1.3.21
  MagickStripString@Base 1.4+really1.3.37
@@ -1166,7 +1165,7 @@ libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3t64 #MINVER#
  _MagickResourceLimitedMemoryGetSizeAttribute@Base 1.4+really1.3.37
  _MagickWarning@Base 1.3.5
  _UpdateMagickResourceHighwater@Base 1.4+really1.3.43
-libGraphicsMagickWand-Q16.so.2 libgraphicsmagick-q16-3t64 #MINVER#
+libGraphicsMagickWand-Q16.so.2 libgraphicsmagick-q16-3 #MINVER#
  CloneMagickWand@Base 1.3.5
  ClonePixelWand@Base 1.3.8
  ClonePixelWands@Base 1.3.8
