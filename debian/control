@@ -38,8 +38,7 @@ Description: collection of image processing tools
  graphicsmagick-imagemagick-compat to obtain a set of several executables
  that is compatible to ImageMagick's interface.
 
-Package: libgraphicsmagick-q16-3t64
-Provides: ${t64:Provides}
+Package: libgraphicsmagick-q16-3
 Breaks: libgraphicsmagick-q16-3 (<< ${source:Version})
 Architecture: any
 Section: libs
@@ -68,7 +67,7 @@ Description: format-independent image processing - C shared library
 Package: libgraphicsmagick1-dev
 Architecture: any
 Section: libdevel
-Depends: libgraphicsmagick-q16-3t64 (= ${binary:Version}), libjpeg-dev,
+Depends: libgraphicsmagick-q16-3 (= ${binary:Version}), libjpeg-dev,
  liblcms2-dev, libwmf-dev, libx11-dev, libsm-dev, libice-dev, libxext-dev,
  x11proto-core-dev, libxml2-dev, libfreetype-dev, libtiff-dev,
  libjbig-dev, libc6-dev, zlib1g-dev | libz-dev, libpng-dev, libheif-dev,
@@ -95,8 +94,7 @@ Description: format-independent image processing - C development files
  This package contains the C development headers and library files needed to
  compile programs using the GraphicsMagick library.
 
-Package: libgraphicsmagick++-q16-12t64
-Provides: ${t64:Provides}
+Package: libgraphicsmagick++-q16-12
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -124,7 +122,7 @@ Description: format-independent image processing - C++ shared library
 Package: libgraphicsmagick++1-dev
 Architecture: any
 Section: libdevel
-Depends: libgraphicsmagick++-q16-12t64 (= ${binary:Version}), libgraphicsmagick1-dev, ${misc:Depends}
+Depends: libgraphicsmagick++-q16-12 (= ${binary:Version}), libgraphicsmagick1-dev, ${misc:Depends}
 Suggests: graphicsmagick
 Provides: libgraphicsmagick++-dev
 Description: format-independent image processing - C++ development files
@@ -214,7 +212,7 @@ Description: image processing libraries providing ImageMagick interface
 Package: graphicsmagick-dbg
 Architecture: any
 Section: debug
-Depends: graphicsmagick (= ${binary:Version}), libgraphicsmagick-q16-3t64 (= ${binary:Version}), libgraphicsmagick++-q16-12t64 (= ${binary:Version}), libgraphics-magick-perl (= ${binary:Version}), ${misc:Depends}
+Depends: graphicsmagick (= ${binary:Version}), libgraphicsmagick-q16-3 (= ${binary:Version}), libgraphicsmagick++-q16-12 (= ${binary:Version}), libgraphics-magick-perl (= ${binary:Version}), ${misc:Depends}
 Description: format-independent image processing - debugging symbols
  GraphicsMagick provides libraries in several programming languages to read,
  write and manipulate image files across a large number of formats, from the
