@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2001
+================================
+
 2001-12-28  Leonard Rosenthol  <leonardr@lazerware.com>
 
   - Even more features and options were added to conjure

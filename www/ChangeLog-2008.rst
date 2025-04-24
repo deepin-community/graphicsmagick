@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2008
+================================
+
 2008-12-28  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/fits.c: Ability to read extension blocks.

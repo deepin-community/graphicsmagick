@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2014
+================================
+
 2014-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/wpg.c (UnpackWPGRaster): Fix some compilation and
@@ -408,7 +412,7 @@
 
 2014-08-09  Jaroslav Fojtik  <JaFojtik@seznam.cz>
 
-        \* coders/webp.c webp cannot be compiled when HasWEBP is not set.
+  - coders/webp.c webp cannot be compiled when HasWEBP is not set.
 
 2014-08-08  Glenn Randers-Pehrson  <glennrp@simple.dallas.tx.us>
 

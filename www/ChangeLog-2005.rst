@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2005
+================================
+
 2005-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - tiff: Update to libtiff 3.8.0. 
@@ -194,7 +198,7 @@
     synonym for Rec601LumaColorspace.
 
   - magick/colorspace.c: Added support for influencing Cineon Log
-    colorspace transformations via image attributes.	
+    colorspace transformations via image attributes.        
     Perform colorspace transformations in floating point rather than
     integer in order to reduce the amount of noise added by
     transform table quantization.

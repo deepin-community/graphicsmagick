@@ -1,4 +1,4 @@
-# Copyright (C) 2004-2023 GraphicsMagick Group
+# Copyright (C) 2004-2024 GraphicsMagick Group
 #
 # This program is covered by multiple licenses, which are described in
 # Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -153,7 +153,7 @@ EXTRA_DIST = \
 	$(TESTS_EXTRA_DIST) \
 	$(UTILITIES_EXTRA_DIST) \
 	$(WAND_EXTRA_DIST) \
-	$(WWWW_EXTRA_DIST) \
+	$(WWW_EXTRA_DIST) \
 	$(WWWAPI_EXTRA_DIST) \
 	$(WWWWANDAPI_EXTRA_DIST)
 
@@ -445,7 +445,7 @@ endif # HasGRAPHICSMAGICK_SNAPSHOT_COPY
 coverity:
 	$(MAKE) clean
 	$(RM) -rf $(COVERITY_COV_INT)
-	cov-build --dir $(COVERITY_COV_INT) $(MAKE)
+	cov-build --dir $(COVERITY_COV_INT) $(MAKE) $(all) $(check_PROGRAMS)
 	tar caf $(COVERITY_TARBALL) $(COVERITY_COV_INT)
 	curl \
 	--form token=`cat $$HOME/.coverity_key_gm` \
@@ -491,8 +491,8 @@ release: distcheck
 # The project should have been configured to use clang.
 #	-enable-checker security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 scan-build:
-	scan-build-13 -k --html-title='GraphicsMagick' \
-	-maxloop 1000 \
+	scan-build-15 -k --html-title='GraphicsMagick' \
+	-maxloop 10000 \
 	-disable-checker deadcode.DeadStores \
 	-enable-checker security.insecureAPI.bcmp \
 	-enable-checker security.insecureAPI.bcopy \
@@ -501,4 +501,4 @@ scan-build:
 	-enable-checker valist.CopyToSelf \
 	-enable-checker valist.Uninitialized \
 	-enable-checker valist.Unterminated \
-	--use-cc $(CC) $(MAKE)
+	--use-cc $(CC) $(MAKE) $(all) $(check_PROGRAMS)

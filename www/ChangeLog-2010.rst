@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2010
+================================
+
 2011-01-16  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - wand/magick\_wand.c (MagickDescribeImage): Was sending
@@ -391,10 +395,6 @@
     proceed to the next file name rather than quitting.  Problem was
     reported by Patrick Welche.
 
-2010-03-08  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
-  - version.sh: Released GraphicsMagick 1.3.12.
-    
 2010-03-03  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - PerlMagick/Makefile.am: Update PerlMagick/Magick.pm in the
@@ -404,8 +404,8 @@
 2010-03-03  Glenn Randers-Pehrson  <glennrp@simple...>
 
   - coders/png.c: restored missing "US" in PNG\_USER\_CHUNK\_CACHE\_MAX
-        at line 102.  Added some (unsigned long) typecasts on print statements
-        to stifle warnings.
+    at line 102.  Added some (unsigned long) typecasts on print statements
+    to stifle warnings.
 
 2010-03-03  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -438,10 +438,6 @@
     "graphicsmagick: "convert" command is broken", reported by
     Vladimir Stavrinov.
 
-2010-02-21  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
-  - version.sh: Released GraphicsMagick 1.3.11.
-
 2010-02-19  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/composite.c (GetCompositionPixelIteratorCallback):
@@ -471,10 +467,6 @@
     character value is in the extended range.  Problem reported by
     Arseny Solokha.  Resolves SourceForge patch #2953314.
 
-2010-02-10  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
-  - version.sh: Released GraphicsMagick 1.3.10.
-
 2010-02-09  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - Magick++/demo/demo.cpp (main): Split demo output frames into
@@ -499,10 +491,6 @@
     +adjoin and writing one frame to "foo%d.jpg" it was outputting
     "foo%d.jpg" rather than "foo0.jpg".  Problem reported by Frans
     Coetzee.
-
-2010-02-04  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
-  - version.sh: Released GraphicsMagick 1.3.9.
 
 2010-02-03  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -591,12 +579,6 @@
     cache views to allocate needs to be obtained from
     omp\_get\_max\_threads().  Otherwise there is a crash if the number
     of threads is reduced from the original value.
-
-2010-01-21  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
-
-  - version.sh: Released GraphicsMagick 1.3.8.
-    
-  - NEWS.txt: Update for the 1.3.8 release.
 
 2010-01-20  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

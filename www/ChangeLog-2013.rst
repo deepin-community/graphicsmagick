@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2013
+================================
+
 2013-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - version.sh: Update for 1.3.19 release.
@@ -254,8 +258,8 @@
     image of outrageous size.
 
 2013-08-26  Jaroslav Fojtik  <JaFojtik@seznam.cz>
-        \* dcraw\dcraw.c Updated from autor
-        \* dcraw\dcraw.c.patch
+  - dcraw\dcraw.c Updated from autor
+  - dcraw\dcraw.c.patch
 
 2013-08-25  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

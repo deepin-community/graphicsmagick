@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2017
+================================
+
 2017-12-25  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - tests/rwfile.tap: Add tests for MIFF compressed sub-formats.
@@ -540,7 +544,7 @@
 2017-09-11  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - magick/shear.c: Possible evil loop might waste CPU for long time
-        without any reason.
+    without any reason.
 
 2017-09-10  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

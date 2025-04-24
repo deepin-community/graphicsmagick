@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2018
+================================
+
 2018-12-20  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/jpeg.c (ReadJPEGImage): Move return point for 'ping' mode
@@ -1414,7 +1418,7 @@
 2018-04-21  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/topol.c Emit error when tile storage overflows image data;
-        fixes oss-fuzz 7769 thanks to oss-fuzz.
+    fixes oss-fuzz 7769 thanks to oss-fuzz.
 
 2018-04-20  Greg Wolfe  <gregory.wolfe@kodakalaris.com>
 
@@ -1977,8 +1981,8 @@
 
   - coders/mat.c Fix forged amount of frames 7076. (Credit to OSS-Fuzz)
 
-        \* coders/topol.c Check for forged image that overflows file size
-        (fuzz 6836).
+  - coders/topol.c Check for forged image that overflows file size
+    (fuzz 6836).
 
 2018-03-23  Greg Wolfe  <gregory.wolfe@kodakalaris.com>
 
@@ -1999,9 +2003,9 @@
 2018-03-22  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/topol.c Use rather MagickSwabArrayOfUInt32() to
-        flip all array elements at once.
+    flip all array elements at once.
 
-        \* magick/annotate.c Compilation issue - using C++ syntax in C code.
+  - magick/annotate.c Compilation issue - using C++ syntax in C code.
 
 2018-03-20  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -2542,7 +2546,7 @@
     "graphicsmagick/coder\_MAT\_fuzzer: Heap-use-after-free in
     GetLocaleExceptionMessage". (Credit to OSS-Fuzz)
 
-2018-02-07    Greg Wolfe  <gregory.wolfe@kodakalaris.com>
+2018-02-07      Greg Wolfe  <gregory.wolfe@kodakalaris.com>
 
   - magick/render.c (IsPoint): Fixed a bug in which
     IsPoint() would reject as a valid coordinate value
@@ -2751,7 +2755,7 @@
 2018-01-11  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/wpg.c Recursive ReadImage could return multiple scenes
-          fixed.
+      fixed.
 
 2018-01-07  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

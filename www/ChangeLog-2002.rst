@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2002
+================================
+
 2002-12-31  Cristy  <cristy@mystic.es.dupont.com>
 
   - magick/command.c: Do not quantize CMYK (bug fix).

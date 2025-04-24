@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2009
+================================
+
 
 2009-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2004
+================================
+
 2004-12-29  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/image.c (DescribeImage): Add normalized channel
@@ -634,7 +638,7 @@
     and strtod() misbehave for strings that start with "0x". The Linux
     versions always treat 0x as the start of a value expressed in hex
     and can't be forced to read the leading value as a double.  This
-    function has been applied globally to replace the problem scanf's.	
+    function has been applied globally to replace the problem scanf's.      
 
   - magick/version.h.in: Make it clear in the -version output that a
     mutitude of copyrights and licenses apply to this software.
@@ -1106,7 +1110,7 @@
 
   - coders/pict.c (WritePICTImage): Eliminate use of uninitialized
     data when writing RGB PICT. Fix OpenBlob assertion when writing
-    JPEG PICT.	
+    JPEG PICT.      
     (ReadPICTImage): Validate `tile\_image` colormap indexes rather
     than `image` colormap indexes. Preserve compression attribute from
     tile image.
@@ -1398,7 +1402,7 @@
     BCBMagick compilation
 
   - Magick++/lib/Magick++/Include.h: Modified to achieve BCBMagick compilation.
-    	
+            
 2004-01-13  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/wpg.c: Applied patch from Jaroslav Fojtik to support

@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2006
+================================
+
 2006-11-02  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - www/Magick++/Image.html: Fix documentation regarding retrieving

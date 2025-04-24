@@ -10,7 +10,7 @@ Build-Depends: dpkg-dev (>= 1.22.5), debhelper-compat (= 13), pkgconf, libjpeg-d
  libjxl-dev [!alpha !hurd-i386],
  fonts-urw-base35 <!nocheck>,
  sharutils <!nocheck>
-Standards-Version: 4.6.2
+Standards-Version: 4.7.2
 Rules-Requires-Root: binary-targets
 Homepage: http://www.graphicsmagick.org/
 
@@ -39,12 +39,11 @@ Description: collection of image processing tools
  that is compatible to ImageMagick's interface.
 
 Package: libgraphicsmagick-q16-3
-Breaks: libgraphicsmagick-q16-3 (<< ${source:Version})
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libgraphicsmagick3 (>= 1.3.21)
-Replaces: libgraphicsmagick-q16-3, libgraphicsmagick3 (>= 1.3.21)
+Replaces: libgraphicsmagick3 (>= 1.3.21)
 Recommends: ghostscript, fonts-urw-base35
 Suggests: graphicsmagick-dbg
 Description: format-independent image processing - C shared library
@@ -99,8 +98,8 @@ Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libgraphicsmagick++-q16-11 (= 1.3.22-1)
-Replaces: libgraphicsmagick++-q16-12, libgraphicsmagick++-q16-11 (= 1.3.22-1)
-Breaks: libgraphicsmagick++-q16-12 (<< ${source:Version}), python-pgmagick (<= 0.7.4-1), python3-pgmagick (<= 0.7.4-1), libgnudatalanguage0 (<= 0.9.9-9)
+Replaces: libgraphicsmagick++-q16-11 (= 1.3.22-1)
+Breaks: python-pgmagick (<= 0.7.4-1), python3-pgmagick (<= 0.7.4-1), libgnudatalanguage0 (<= 0.9.9-9)
 Suggests: graphicsmagick-dbg
 Description: format-independent image processing - C++ shared library
  GraphicsMagick provides libraries in several programming languages to read,
