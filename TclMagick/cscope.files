@@ -1,0 +1,5 @@
+./generic/libttkcommon.h
+./generic/TkMagick.c
+./generic/TclMagick.c
+./generic/TclMagickAppInit.c
+./generic/TclMagick.h

@@ -1936,10 +1936,10 @@ MagickExport void GetImageInfo(ImageInfo *image_info)
   image_info->depth=QuantumDepth;
   image_info->interlace=UndefinedInterlace;
   image_info->quality=DefaultCompressionQuality;
-  image_info->antialias=True;
+  image_info->antialias=MagickTrue;
   image_info->pointsize=12;
-  image_info->dither=True;
-  image_info->progress=True;
+  image_info->dither=MagickTrue;
+  image_info->progress=MagickFalse;
   GetExceptionInfo(&exception);
   BackgroundColorInit(&image_info->background_color);
   BorderColorInit(&image_info->border_color);
@@ -2150,7 +2150,7 @@ MagickExport Image *ReferenceImage(Image *image)
 %
 %  The format of the RemoveDefinitions method is:
 %
-%      void RemoveDefinitions(ImageInfo *image_info,const char *options)
+%      MagickPassFail RemoveDefinitions(ImageInfo *image_info,const char *options)
 %
 %  A description of each parameter follows:
 %
@@ -2789,7 +2789,7 @@ static MagickPassFail
 MagickParseSubImageSpecification(const char *subimage_spec,
                                  unsigned long *subimage_ptr,
                                  unsigned long *subrange_ptr,
-                                 MagickBool allow_geometry)
+                                 const MagickBool allow_geometry)
 {
   char
     spec[MaxTextExtent];
@@ -2803,6 +2803,7 @@ MagickParseSubImageSpecification(const char *subimage_spec,
     4
     2,7,4
     4-7
+    1,3,0-2
     320x256+50+50  (only if allow_geometry)
   */
 
@@ -2850,7 +2851,20 @@ MagickParseSubImageSpecification(const char *subimage_spec,
           digits=q;
           value=strtol(digits,&q,10);
           if (q <= digits) /* Parse error */
-            break;
+            {
+              status=MagickFail;
+              break;
+            }
+          if (value < 0) /* Illegal */
+            {
+              status=MagickFail;
+              break;
+            }
+          if (value > INT_MAX) /* Illegal */
+            {
+              status=MagickFail;
+              break;
+            }
           first=value;
           last=first;
           while (isspace((int)(unsigned char) *q))
@@ -2860,7 +2874,20 @@ MagickParseSubImageSpecification(const char *subimage_spec,
               digits=q+1;
               value=strtol(digits,&q,10);
               if (q <= digits) /* Parse error */
-                break;
+                {
+                  status=MagickFail;
+                  break;
+                }
+              if (value < 0) /* Illegal */
+                {
+                  status=MagickFail;
+                  break;
+                }
+              if (value > INT_MAX) /* Illegal */
+                {
+                  status=MagickFail;
+                  break;
+                }
               last=value;
             }
           else if ((*q != ',') && (*q != '\0'))
@@ -2874,9 +2901,9 @@ MagickParseSubImageSpecification(const char *subimage_spec,
           if (last > subrange)
             subrange=last;
         }
-      if (*q == '\0')
+      if ((status != MagickFail) && (*q == '\0'))
         {
-          subrange -= subimage-1;
+          subrange -= subimage-1; /* Coverity 427451 Overflowed constant (when subimage=0) */
           *subimage_ptr=subimage;
           *subrange_ptr=subrange;
           status=MagickPass;

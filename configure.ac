@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2023 GraphicsMagick Group
+# Copyright (C) 2003-2024 GraphicsMagick Group
 # Copyright (C) 2002 ImageMagick Studio
 # Copyright (C) 1998, 1999 E. I. du Pont de Nemours and Company
 #
@@ -640,16 +640,6 @@ if test "$with_bzlib" != 'yes' ; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-bzlib=$with_bzlib "
 fi
 
-# Disable Display Postscript.
-AC_ARG_WITH([dps],
-              AS_HELP_STRING([--without-dps],
-                             [disable Display Postscript support]),
-              [with_dps=$withval],
-              [with_dps='yes'])
-if test "$with_dps" != 'yes' ; then
-    DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-dps=$with_dps "
-fi
-
 # Enable FlashPIX.
 AC_ARG_WITH([fpx],
               AS_HELP_STRING([--with-fpx],
@@ -811,6 +801,17 @@ if test "$with_ttf" != 'yes' ; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-ttf=$with_ttf "
 fi
 
+# Disable LIBZIP.
+AC_ARG_WITH([libzip],
+              AS_HELP_STRING([--without-libzip],
+                             [disable libzip support]),
+              [with_libzip=$withval],
+              [with_libzip='yes'])
+if test "$with_libzip" != 'yes' ; then
+    DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-libzip=$with_libzip "
+fi
+
+
 # Enable use of Google tcmalloc library.
 AC_ARG_WITH([tcmalloc],
               AS_HELP_STRING([--with-tcmalloc],
@@ -877,6 +878,16 @@ AC_ARG_WITH([gs-font-dir],
               [with_gs_font_dir='default'])
 if test "$with_gs_font_dir" != 'default' ; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-gs-font-dir=$with_gs_font_dir "
+fi
+
+# Set Artifex URW Base35 OTF font directory
+AC_ARG_WITH([urwbase35otf-font-dir],
+              AS_HELP_STRING([--with-urwbase35otf-font-dir=DIR],
+                             [directory containing Artifex URW Base35 OTF fonts]),
+              [with_urwbase35otf_font_dir=$withval],
+              [with_urwbase35otf_font_dir='default'])
+if test "$with_urwbase35otf_font_dir" != 'default' ; then
+    DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-urwbase35otf-font-dir=$with_urwbase35otf_font_dir "
 fi
 
 # Set Windows font directory
@@ -1172,8 +1183,13 @@ then
 fi
 case "${host_os}" in
   mingw* )
-    INT64_F='"I64"'
-    ;;
+    # Note that config.guess sets vendor to 'pc' but mingw-w64
+    # config.site overrides it and sets host_vendor to 'w64'.
+    case "${host_vendor}" in
+      'pc' ) # Original MinGW, use Microsoft syntax
+        INT64_F='"I64"'
+        ;;
+    esac
 esac
 AC_MSG_RESULT([$INT64_T])
 AC_SUBST([INT64_T])
@@ -1194,8 +1210,11 @@ then
 fi
 case "${host_os}" in
   mingw* )
-    UINT64_F='"I64"'
-    ;;
+    case "${host_vendor}" in
+      'pc' ) # Original MinGW, use Microsoft syntax
+        UINT64_F='"I64"'
+        ;;
+    esac
 esac
 AC_MSG_RESULT([$UINT64_T])
 AC_SUBST([UINT64_T])
@@ -1267,19 +1286,19 @@ then
 elif test $ac_cv_sizeof_size_t -eq $ac_cv_sizeof_unsigned_long_long
 then
   # Maybe a LLP64 architecture like WIN64
+  MAGICK_SIZE_T='unsigned long long'
+  MAGICK_SIZE_T_F='"ll"'
+  MAGICK_SSIZE_T='signed long long'
+  MAGICK_SSIZE_T_F='"ll"'
   case "${host_os}" in
     mingw* )
-      MAGICK_SIZE_T='unsigned long long'
-      MAGICK_SIZE_T_F='"I64"'
-      MAGICK_SSIZE_T='signed long long'
-      MAGICK_SSIZE_T_F='"I64"'
-    ;;
-    *)
-      MAGICK_SIZE_T='unsigned long long'
-      MAGICK_SIZE_T_F='"ll"'
-      MAGICK_SSIZE_T='signed long long'
-      MAGICK_SSIZE_T_F='"ll"'
-    ;;
+      case "${host_vendor}" in
+        'pc' ) # Original MinGW, use Microsoft syntax
+          MAGICK_SIZE_T_F='"I64"'
+          MAGICK_SSIZE_T_F='"I64"'
+          ;;
+      esac
+      ;;
   esac
 fi
 AC_MSG_RESULT([$MAGICK_SIZE_T_F])
@@ -1719,7 +1738,7 @@ AC_SUBST([LIB_MTMALLOC])
 # Find OpenMP library (no pkg-config support!)
 #
 LIB_OMP=''
-if test "${OPENMP_ENABLED}" == 'yes'
+if test "${OPENMP_ENABLED}" = 'yes'
 then
   if test "${GCC}" = "yes"
   then
@@ -2118,7 +2137,9 @@ then
     #   --with-minimum --with-http --with-ftp --with-push --with-zlib --with-sax1
     # Note that SAX1 interfaces don't seem to be directly used but parsers fail to work
     # as expected without SAX1 support compiled in.
+    AC_CHECK_HEADER([libxml/xmlversion.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`])
     AC_CHECK_HEADER([libxml/parser.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`])
+    AC_CHECK_HEADER([libxml/xmlmemory.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`])
     AC_CHECK_LIB([xml2],[xmlSAXVersion],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],[$LIB_XML_DEPS])
     # Next two require --with-push to be enabled
     AC_CHECK_LIB([xml2],[xmlParseChunk],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],[$LIB_XML_DEPS])
@@ -2210,68 +2231,6 @@ fi
 AC_SUBST([LIB_DL])
 
 #
-# Check for Display Postscript
-#
-have_dps='no'
-LIB_DPS=''
-if test "$with_dps" != 'no' && test "$with_x" != 'no'
-then
-    AC_MSG_CHECKING([for Display Postscript support ])
-    AC_MSG_RESULT()
-    failed=0
-    passed=0
-    O_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS -I${ac_x_includes}/X11"
-    AC_CHECK_HEADER([DPS/dpsXclient.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`])
-    # DPS issues:
-    # XFree86-4.x needs -lXt to provide XtMalloc for -ldps.
-    # Cygwin doesn't deliver -lXt as a DLL, which prevents a DLL build.
-    # Adobe DPS (as delivered on Solaris) doesn't require -lXt.
-    # GraphicsMagick itself doesn't use -lXt.
-    have_libdps='no'
-    LIBDPS_XT=''
-    AC_CHECK_LIB([dps],[DPSInitialize],[have_libdps='yes'],[have_libdps='no'],)
-    if test "$have_libdps" != 'yes'
-    then
-      # Unset cache variable so we can try again.
-      unset ac_cv_lib_dps_DPSInitialize
-      AC_CHECK_LIB([dps],[DPSInitialize],[have_libdps='yes'],[have_libdps='no'],[-lXt])
-      if test "$have_libdps" = 'yes'
-      then
-        LIBDPS_XT='-lXt'
-      fi
-    fi
-    if test "$have_libdps" = 'yes'
-    then
-      passed=`expr $passed + 1`
-    else
-      failed=`expr $failed + 1`
-    fi
-    AC_CHECK_LIB([dpstk],[XDPSPixelsPerPoint],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],[-ldps $LIBDPS_XT])
-    AC_MSG_CHECKING([if DPS package is complete])
-    if test $passed -gt 0
-    then
-    if test $failed -gt 0
-    then
-        AC_MSG_RESULT([no -- some components failed test])
-        have_dps='no (failed tests)'
-        CPPFLAGS="$O_CPPFLAGS"
-    else
-        LIB_DPS="-ldpstk -ldps ${LIBDPS_XT}"
-        LIBS="$LIB_DPS $LIBS"
-        AC_DEFINE([HasDPS],[1],[Define if you have Display Postscript])
-        AC_MSG_RESULT([yes])
-        have_dps='yes'
-    fi
-    else
-    AC_MSG_RESULT([no])
-    CPPFLAGS=$O_CPPFLAGS
-    fi
-fi
-AM_CONDITIONAL([HasDPS],[test "$have_dps" = 'yes'])
-AC_SUBST([LIB_DPS])
-
-#
 # Check for FlashPIX
 #
 have_fpx='no'
@@ -2295,7 +2254,7 @@ then
         have_fpx='no (failed tests)'
     else
         LIB_FPX='-lfpx'
-        # LIBS="$LIB_FPX $LIBS"
+        LIBS="$LIB_FPX $LIBS"
         AC_DEFINE([HasFPX],[1],[Define if you have FlashPIX library])
         AC_MSG_RESULT([yes])
         have_fpx='yes'
@@ -2837,6 +2796,68 @@ then
 fi
 AM_CONDITIONAL([HasWEBP],[test "$have_webp" = 'yes'])
 AC_SUBST([LIB_WEBP])
+
+
+#
+# Check for LIBZIP
+#
+have_libzip='no'
+LIB_ZIP=''
+if test "$with_libzip" != 'no'
+then
+    AC_MSG_CHECKING([for libzip support ])
+    AC_MSG_RESULT()
+    OLD_CPPFLAGS=$CPPFLAGS
+    OLD_LDFLAGS=$LDFLAGS
+    OLD_LIBS=$LIBS
+    failed=0
+    passed=0
+
+    PKG_CHECK_MODULES([LIBZIP], [libzip], [passed=`expr $passed + 1`], [failed=`expr $failed + 1`])
+    if test $failed -eq 0
+    then
+        if test -n "$VERBOSE"
+        then
+            printf "LIBZIP_LIBS=${LIBZIP_LIBS}\n"
+            printf "LIBZIP_CFLAGS=${LIBZIP_CFLAGS}\n"
+        fi
+        pkg_config_to_flags 'libzip' "${LIBZIP_LIBS}" "${LIBZIP_CFLAGS}"
+    else
+      if test -n "${LIBZIP_PKG_ERRORS}"
+      then
+        printf "${LIBZIP_PKG_ERRORS}\n"
+      fi
+      failed=0
+    fi
+
+    AC_CHECK_HEADER([zip.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],[])
+    AC_CHECK_LIB([zip],[zip_open],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],)
+
+    AC_MSG_CHECKING([if libzip package is complete])
+    if test $passed -gt 0
+    then
+        if test $failed -gt 0
+        then
+            AC_MSG_RESULT([no -- some components failed test])
+            have_libzip='no (failed tests)'
+            CPPFLAGS=$OLD_CPPFLAGS
+            LDFLAGS=$OLD_LDFLAGS
+            LIBS=$OLD_LIBS
+        else
+            pkg_config_to_flags 'libzip' "${LIB_ZIP}" ''
+            LIB_ZIP='-lzip'
+            LIBS="$LIB_ZIP $LIBS"
+            AC_DEFINE([HasLIBZIP],[1],[Define if you have libzip library])
+            AC_MSG_RESULT([yes])
+            have_libzip='yes'
+        fi
+    else
+        AC_MSG_RESULT([no])
+    fi
+fi
+AM_CONDITIONAL([HasLIBZIP],[test "$have_libzip" = 'yes'])
+AC_SUBST([LIB_ZIP])
+
 
 #
 # Check for JBIG
@@ -3628,6 +3649,42 @@ else
   AC_MSG_RESULT([not found!]);
 fi
 
+# Check for modern Artifex urw-base35-fonts in OpenType format
+# (https://github.com/ArtifexSoftware/urw-base35-fonts), which are
+# similar to older 'gsfonts' but use descriptive file names and are
+# also available in OpenType format.
+AC_MSG_CHECKING([for Artifex urw-base35 OTF fonts directory (location of URWGothic-Book.otf)])
+urwbase35otf_font_dir=''
+if test "${with_urwbase35otf_font_dir}" != 'default'
+then
+  urwbase35otf_font_dir="${with_urwbase35otf_font_dir}/"
+
+else
+
+    # On Debian/Ubuntu systems, these are installed under
+    # /usr/share/fonts/opentype/urw-base35 and
+    # /usr/share/fonts/type1/urw-base35
+    #
+    # Debian/Ubuntu provide a font map at /etc/ghostscript/fontmap.d/10fonts-urw-base35.conf
+    for font_dir in "${prefix}/share/fonts/opentype/urw-base35/" /usr/share/fonts/opentype/urw-base35/
+    do
+      if test -f "${font_dir}URWGothic-Book.otf"
+        then
+          urwbase35otf_font_dir="${font_dir}"
+          break 1
+        fi
+    done
+fi
+
+if test "${urwbase35otf_font_dir}x" != 'x'
+then
+  type_include_files="${type_include_files} "'<include file="type-urw-base35-otf.mgk" />'
+    AC_MSG_RESULT([$urwbase35otf_font_dir])
+else
+    AC_MSG_RESULT([not found!]);
+fi
+AC_SUBST([urwbase35otf_font_dir])
+
 # Ghostscript
 AC_MSG_CHECKING([for Ghostscript fonts directory (location of a010013l.pfb)])
 ghostscript_font_dir=''
@@ -3665,7 +3722,11 @@ else
     if test "$with_gs" = 'yes' ; then
       if test "${PSDelegate}" != "${PSDelegateDefault}"
       then
-        ghostscript_font_dir=`echo "${PSDelegate}" | sed -e 's:/gs/.*:/gs:;s:^/::;s/./&:/;s:/:\\\\:g'`"\\fonts\\"
+        font_dir=`echo "${PSDelegate}" | sed -e 's:/gs/.*:/gs:;s:^/::;s/./&:/;s:/:\\\\:g'`"\\fonts\\"
+        if test -f "${font_dir}a010013l.pfb"
+        then
+          ghostscript_font_dir="${font_dir}"
+        fi
       fi
     fi
 
@@ -3677,6 +3738,8 @@ else
     # Recent Cygwin puts Ghostscript fonts in /usr/share/ghostscript/fonts
     # Recent Gentoo Linux puts Ghostscript fonts in /usr/share/fonts/ghostscript
     # Debian puts Ghostscript fonts in /usr/share/fonts/type1/gsfonts
+    #
+    # Debian/Ubuntu provide a font map at /etc/ghostscript/fontmap.d/10gsfonts.conf
     for font_dir in "${prefix}/share/ghostscript/fonts/" '/usr/share/fonts/default/Type1/' '/usr/share/ghostscript/fonts/' '/usr/share/fonts/ghostscript/' '/usr/share/fonts/type1/gsfonts/'
     do
       if test -f "${font_dir}a010013l.pfb"
@@ -3686,21 +3749,31 @@ else
       fi
     done
 
+    # Look for Ghostscript fonts relative to Ghostscript install directory
     if test "${ghostscript_font_dir}x" = 'x'
     then
       if test "$with_gs" = 'yes' ; then
         if test "$PSDelegate" != "${PSDelegateDefault}"
         then
-          ghostscript_font_dir=`echo "$PSDelegate" | sed -e 's:/bin/gs:/share/ghostscript/fonts:'`"/"
+          font_dir=`echo "$PSDelegate" | sed -e 's:/bin/gs:/share/ghostscript/fonts:'`"/"
+          if test -f "${font_dir}a010013l.pfb"
+          then
+            ghostscript_font_dir="${font_dir}"
+          fi
         fi
       fi
     fi
 
   fi
 fi
+
 if test "${ghostscript_font_dir}x" != 'x'
 then
-  type_include_files="${type_include_files} "'<include file="type-ghostscript.mgk" />'
+  # Only include type-ghostscript.mgk when urwbase35otf_font_dir not found
+  if test "${urwbase35otf_font_dir}x" = 'x'
+  then
+    type_include_files="${type_include_files} "'<include file="type-ghostscript.mgk" />'
+  fi
   AC_MSG_RESULT([$ghostscript_font_dir])
 else
   AC_MSG_RESULT([not found!]);
@@ -4111,8 +4184,7 @@ if test "$have_png"    = 'yes' ; then
 fi
 
 have_ps='no'
-if test "$have_dps"    = 'yes' || \
-   test "$have_gs" = 'yes' ; then
+if test "$have_gs" = 'yes' ; then
    have_ps='yes'
 fi
 if test "$have_ps"     = 'yes' ; then
@@ -4203,7 +4275,7 @@ fi
 if test "$build_modules" != 'no'
 then
   MAGICK_DEP_LIBS=''
-  for token in $LCMS2_LIBS $FREETYPE_LIBS $LIB_GS $LIB_XEXT $LIB_IPC $LIB_X11 $LIB_BZLIB $ZLIB_LIBS $LIB_LTDL $LIB_TRIO $LIB_GDI32 $LIBS_USER $LIB_MATH $LIB_THREAD $LIB_TCMALLOC $LIB_UMEM $LIB_MTMALLOC
+  for token in $LIB_FPX $LCMS2_LIBS $FREETYPE_LIBS $LIB_XEXT $LIB_IPC $LIB_X11 $LIB_BZLIB $ZLIB_LIBS $LIB_LTDL $LIB_TRIO $LIB_GDI32 $LIBS_USER $LIB_MATH $LIB_THREAD $LIB_TCMALLOC $LIB_UMEM $LIB_MTMALLOC
   do
     case $token in
       -l*)
@@ -4303,6 +4375,7 @@ AC_CONFIG_FILES(\
         config/delegates.mgk \
         config/type-ghostscript.mgk \
         config/type-solaris.mgk \
+        config/type-urw-base35-otf.mgk \
         config/type-windows.mgk \
         config/type.mgk \
         magick/GraphicsMagick-config \
@@ -4345,16 +4418,24 @@ printf "OpenMP            --enable-openmp=$enable_openmp\t\t${OPENMP_ENABLED} ${
 printf "\n"
 printf "Delegate Configuration:\n"
 printf "BZLIB             --with-bzlib=$with_bzlib         \t$have_bzlib\n"
-printf "DPS               --with-dps=$with_dps          \t$have_dps\n"
 printf "FlashPIX          --with-fpx=$with_fpx          \t$have_fpx\n"
 printf "FreeType 2.0      --with-ttf=$with_ttf          \t$have_ttf\n"
 printf "Ghostscript       --with-gs=$with_gs            \t$PSDelegate ($GSVersion)\n"
+
 result_ghostscript_font_dir='none'
 if test "${ghostscript_font_dir}x" != 'x'
 then
   result_ghostscript_font_dir="$ghostscript_font_dir"
 fi
 printf "Ghostscript fonts --with-gs-font-dir=$with_gs_font_dir\t$result_ghostscript_font_dir\n"
+
+result_urwbase35otf_font_dir='none'
+if test "${urwbase35otf_font_dir}x" != 'x'
+then
+  result_urwbase35otf_font_dir="$urwbase35otf_font_dir"
+fi
+printf "URW Base35 fonts  --with-base35otf-font-dir=$with_gs_font_dir\t$result_urwbase35otf_font_dir\n"
+
 printf "Windows GDI32     --with-gdi32=$with_gdi32      \t$have_gdi32\n"
 printf "JBIG              --with-jbig=$with_jbig        \t$have_jbig\n"
 printf "JPEG v1           --with-jpeg=$with_jpeg        \t$have_jpeg\n"
@@ -4362,6 +4443,7 @@ printf "JPEG-2000         --with-jp2=$with_jp2          \t$have_jp2\n"
 printf "JPEG-XL           --with-jxl=$with_jxl          \t$have_jxl\n"
 printf "LCMS v2           --with-lcms2=$with_lcms2        \t$have_lcms2\n"
 # printf "MPEG v2           --with-mpeg2=$with_mpeg2    \t$have_mpeg2\n"
+printf "LIBZIP            --with-libzip=$with_libzip      \t$have_libzip\n"
 printf "LZMA              --with-lzma=$with_lzma        \t$have_lzma\n"
 printf "Magick++          --with-magick-plus-plus=$with_magick_plus_plus\t$have_magick_plus_plus\n"
 printf "PERL              --with-perl=$with_perl        \t$have_perl\n"

@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2019
+================================
+
 2019-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/gradient.c (ReadGRADIENTImage): QueryColorDatabase() only

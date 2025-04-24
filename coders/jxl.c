@@ -571,6 +571,7 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
                                       basic_info.alpha_bits, basic_info.num_color_channels,
                                       basic_info.have_animation == JXL_FALSE ? "False" : "True");
               }
+
             if (basic_info.num_extra_channels)
               {
                 size_t index;
@@ -613,7 +614,21 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
               }
 
             if (basic_info.have_animation == 1)
-              ThrowJXLReaderException(CoderError, ImageTypeNotSupported, image);
+              {
+                if (image->logging)
+                  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                        "JXL animations are not yet supported!");
+                ThrowJXLReaderException(CoderError, ImageTypeNotSupported, image);
+              }
+
+            if ((basic_info.alpha_bits != 0) &&
+                (basic_info.alpha_bits != basic_info.bits_per_sample))
+              {
+                if (image->logging)
+                  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                        "Color and alpha sample depths must be the same!");
+                ThrowJXLReaderException(CoderError, ImageTypeNotSupported, image);
+              }
 
             image->columns=basic_info.xsize;
             image->rows=basic_info.ysize;
@@ -622,6 +637,9 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
               image->matte=MagickTrue;
 
             image->orientation=convert_orientation(basic_info.orientation);
+
+            if (CheckImagePixelLimits(image, exception) != MagickPass)
+              ThrowJXLReaderException(ResourceLimitError,ImagePixelLimitExceeded,image);
 
             pixel_format.endianness=JXL_NATIVE_ENDIAN;
             pixel_format.align=0;
@@ -640,7 +658,7 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
                       ThrowJXLReaderException(ResourceLimitError,MemoryAllocationFailed,image);
                   }
                 grayscale=MagickTrue;
-                pixel_format.num_channels=1;
+                pixel_format.num_channels=image->matte ? 2 : 1;
                 pixel_format.data_type=(basic_info.bits_per_sample <= 8 ? JXL_TYPE_UINT8 :
                                         (basic_info.bits_per_sample <= 16 ? JXL_TYPE_UINT16 :
                                          JXL_TYPE_FLOAT));
@@ -825,6 +843,24 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
             size_t
               out_len;
 
+            if (image->logging)
+              (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                    "JxlPixelFormat:\n"
+                                    "    num_channels: %u\n"
+                                    "    data_type: %s\n"
+                                    "    endianness: %s\n"
+                                    "    align: %" MAGICK_SIZE_T_F "u",
+                                    pixel_format.num_channels,
+                                    pixel_format.data_type == JXL_TYPE_FLOAT ? "float" :
+                                    (pixel_format.data_type == JXL_TYPE_UINT8 ? "uint8" :
+                                     (pixel_format.data_type == JXL_TYPE_UINT16 ? "uint16" :
+                                      (pixel_format.data_type == JXL_TYPE_FLOAT16 ? "float16" :
+                                       "unknown"))) ,
+                                    pixel_format.endianness == JXL_NATIVE_ENDIAN ? "native" :
+                                    (pixel_format.endianness == JXL_LITTLE_ENDIAN ? "little" :
+                                     (pixel_format.endianness == JXL_BIG_ENDIAN ? "big" : "unknown")),
+                                    pixel_format.align);
+
             status=JxlDecoderImageOutBufferSize(jxl_decoder,&pixel_format,&out_len);
             if (status != JXL_DEC_SUCCESS)
               {
@@ -834,6 +870,10 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
                 break;
               }
 
+            if (image->logging)
+              (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                    "JxlDecoderImageOutBufferSize() returns %" MAGICK_SIZE_T_F "u",
+                                    (MAGICK_SIZE_T) out_len);
             out_buf=MagickAllocateResourceLimitedArray(unsigned char *,out_len,sizeof(*out_buf));
             if (out_buf == (unsigned char *) NULL)
               ThrowJXLReaderException(ResourceLimitError,MemoryAllocationFailed,image);
@@ -919,8 +959,8 @@ static Image *ReadJXLImage(const ImageInfo *image_info,
                                                 &import_options,&import_area_info))
                     != MagickPass)
                   break;
-                // Promote linear image to sRGB (2.4 gamma).
-                // We could also set image->gamma and return the original image.
+                /* Promote linear image to sRGB (2.4 gamma).
+                   We could also set image->gamma and return the original image. */
 #if 1
                 if (isLinear)
                   {

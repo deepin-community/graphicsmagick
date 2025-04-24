@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2020 GraphicsMagick Group
+% Copyright (C) 2003-2024 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 %
 % This program is covered by multiple licenses, which are described in
@@ -765,7 +765,7 @@ static Image *ReadDIBImage(const ImageInfo *image_info,ExceptionInfo *exception)
   length=MagickArraySize(bytes_per_line,image->rows);
   if (length == 0)
     ThrowReaderException(CoderError,ArithmeticOverflow,image);
-  if (~((size_t) 0) - image->columns < 1)
+  if ((image->columns+1UL) < image->columns)
     ThrowReaderException(CoderError,ArithmeticOverflow,image);
   pixels_size=MagickArraySize(image->rows,Max(bytes_per_line,(size_t) image->columns+1));
   if (pixels_size == 0)
@@ -1183,7 +1183,9 @@ ModuleExport void RegisterDIBImage(void)
   entry->encoder=(EncoderHandler) WriteDIBImage;
   entry->magick=(MagickHandler) IsDIB;
   entry->adjoin=False;
-  entry->stealth=True;
+#if !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+  entry->stealth=True; /* Don't list in '-list format' output */
+#endif /* if !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION) */
   entry->description="Microsoft Windows 3.X Packed Device-Independent Bitmap";
   entry->module="DIB";
   (void) RegisterMagickInfo(entry);
@@ -1193,7 +1195,7 @@ ModuleExport void RegisterDIBImage(void)
   /* entry->encoder=(EncoderHandler) WriteDIBImage; */
   entry->magick=(MagickHandler) IsDIB;
   entry->adjoin=False;
-  entry->stealth=True;
+  entry->stealth=True; /* Don't list in '-list format' output */
   entry->raw=True; /* Requires size to work correctly. */
   entry->description="Microsoft Windows 3.X Packed Device-Independent Bitmap + Mask";
   entry->module="DIB";

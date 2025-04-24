@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2020
+================================
+
 2020-12-30  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - utilities/tests/convert-cmds.txt: A list of convert commands to

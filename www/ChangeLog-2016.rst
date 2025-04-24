@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2016
+================================
+
 2016-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/pnm.c (WritePNMImage): Support writing GRAYSCALE PAM
@@ -754,7 +758,7 @@
 2016-04-02 Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - coders/mat.c Matlab V4 files are also rotated.
-        \* PerlMagick/t/input\_gray\_lsb\_double\_V4.mat   Demo Matlab V4 file.
+  - PerlMagick/t/input\_gray\_lsb\_double\_V4.mat   Demo Matlab V4 file.
 
 2016-04-01  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

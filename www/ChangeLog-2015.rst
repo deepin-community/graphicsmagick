@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2015
+================================
+
 2015-12-12  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - ttf: Update bundled freetype to release 2.6.2.
@@ -146,9 +150,9 @@
 
 2015-08-30  Jaroslav Fojtik  <JaFojtik@seznam.cz>
 
-        \* magick/ImageMagick.rc Replace Imagemagick.ico by GraphicsMagick.ico
+  - magick/ImageMagick.rc Replace Imagemagick.ico by GraphicsMagick.ico
 
-        \* magick/Imagemagick.ico is no longer needed and not referenced anywhere.
+  - magick/Imagemagick.ico is no longer needed and not referenced anywhere.
 
 2015-08-22  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -1137,7 +1141,7 @@
 
 2014-03-24  Jaroslav Fojtik  <JaFojtik@seznam.cz>
 
-        \* coders/wpg.c More paranoa in checking ReadBlobByte() negative return.
+  - coders/wpg.c More paranoa in checking ReadBlobByte() negative return.
 
 2015-03-23  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -1498,7 +1502,7 @@
 2014-02-22  Jaroslav Fojtik  <JaFojtik@seznam.cz>
 
   - VisualMagick\configure\configure.cpp Fixed crash.
-        Renamed debug to configure\_d.exe to prevent mess.
+    Renamed debug to configure\_d.exe to prevent mess.
 
 2015-02-21  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 

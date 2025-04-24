@@ -1,7 +1,11 @@
+================================
+GraphicsMagick ChangeLog - 2007
+================================
+
 2007-12-23  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - VisualMagick/configure/configure.rc: Better positioning of frog,
-    changed original ImageMagick messages.	
+    changed original ImageMagick messages.  
 
   - VisualMagick/configure/configure.exe: New build.
 
@@ -83,7 +87,7 @@
 2007-10-20  Fojtik Jaroslav  <JaFojtik@seznam.cz>
 
   - mat.c: Attempt to read `logic` type modification 
-        as monochrome image.
+    as monochrome image.
 
 2007-10-07  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -497,7 +501,7 @@
     places.
 
   - magick/{shear.c, image.c}: Use BlendComposite() from
-    alpha\_composite.h.	
+    alpha\_composite.h.      
 
   - magick/image.c (SetImageDepth): Don't bother to test current
     depth in advance. Preserve is\_monochrome flag.  Encapsulate
@@ -780,7 +784,7 @@
     declarations.
 
   - coders/pnm.c (ReadPNMImage):  Fix pixel scaling problem caused by
-        floating point rounding error.
+    floating point rounding error.
 
 2007-07-07  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
@@ -872,7 +876,7 @@
 2007-05-13  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - coders/cineon.c (ReadCINEONImage): Alter sample scaling
-    algorithm a bit.	
+    algorithm a bit.        
 
   - tests/rwblob.c, tests/rwfile.c: Allow some slop when testing
     Cineon format with QuantumDepth=8 since we are currently only

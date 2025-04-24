@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2023 GraphicsMagick Group
+% Copyright (C) 2023-2025 GraphicsMagick Group
 %
 % This program is covered by multiple licenses, which are described in
 % Copyright.txt. You should have received a copy of Copyright.txt with this
@@ -141,7 +141,8 @@ static MagickBool IsHEIF(const unsigned char *magick,const size_t length)
 /*
   Read metadata (Exif and XMP)
 */
-static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
+static Image *ReadMetadata(const ImageInfo *image_info,
+                           struct heif_image_handle *heif_image_handle,
                            Image *image, ExceptionInfo *exception)
 {
   int
@@ -240,10 +241,10 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
               magick_uint32_t offset;
 
               /* Big-endian offset decoding */
-              offset = p[exif_pad+0] << 24 |
-                       p[exif_pad+1] << 16 |
-                       p[exif_pad+2] << 8 |
-                       p[exif_pad+3];
+              offset = (magick_uint32_t) p[exif_pad+0] << 24 |
+                (magick_uint32_t) p[exif_pad+1] << 16 |
+                (magick_uint32_t) p[exif_pad+2] << 8 |
+                (magick_uint32_t) p[exif_pad+3];
 
               /*
                 If the TIFF header offset is not zero, then need to
@@ -257,7 +258,7 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
                   /* Strip any EOI marker if payload starts with a JPEG marker */
                   if (profile_size > 2 &&
                       (memcmp(p+exif_pad+4,"\xff\xd8",2) == 0 ||
-                      memcmp(p+exif_pad+4,"\xff\xe1",2) == 0) &&
+                       memcmp(p+exif_pad+4,"\xff\xe1",2) == 0) &&
                       memcmp(p+exif_pad+4+profile_size-2,"\xff\xd9",2) == 0)
                     profile_size -= 2;
 
@@ -299,6 +300,28 @@ static Image *ReadMetadata(struct heif_image_handle *heif_image_handle,
             {
               if (NULL != content_type && strncmp(content_type,"application/rdf+xml",19) == 0)
                 SetImageProfile(image,"XMP",profile,profile_size);
+            }
+          /*
+            Only apply Exif orientation if ignore-transformations is true
+            since HEIF native transformations will handle orientation otherwise
+          */
+          if (strncmp(profile_name,"Exif",4) == 0)
+            {
+              const char *value;
+              MagickBool ignore_transformations = MagickFalse;
+              if ((value=AccessDefinition(image_info,"heif","ignore-transformations")))
+                if (LocaleCompare(value,"TRUE") == 0)
+                  ignore_transformations = MagickTrue;
+
+              if (!ignore_transformations)
+                {
+                  const ImageAttribute *attribute = GetImageAttribute(image,"EXIF:Orientation");
+                  if (attribute && attribute->value)
+                    {
+                      SetImageAttribute(image,"EXIF:Orientation","1");
+                      image->orientation = UndefinedOrientation;
+                    }
+                }
             }
           MagickFreeResourceLimitedMemory(profile);
         }
@@ -568,21 +591,30 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
       ThrowHEIFReaderException(CorruptImageError, AnErrorHasOccurredReadingFromFile, image);
     }
 
-  /* no support for reading multiple images but could be added */
-  if (heif_context_get_number_of_top_level_images(heif) != 1)
-    ThrowHEIFReaderException(CoderError, NumberOfImagesIsNotSupported, image);
-
-  heif_status=heif_context_get_primary_image_handle(heif, &heif_image_handle);
-  if (heif_status.code == heif_error_Memory_allocation_error)
-    ThrowHEIFReaderException(ResourceLimitError,MemoryAllocationFailed,image);
-  if (heif_status.code != heif_error_Ok)
-    {
-      if (image->logging)
-        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                              "heif_context_get_primary_image_handle() reports error \"%s\"",
-                              heif_status.message);
+  /* FIXME: no support for reading multiple images but should be
+     added, if multiple images will use primary image */
+  {
+    int number_of_top_level_images;
+    number_of_top_level_images=heif_context_get_number_of_top_level_images(heif);
+    if (image->logging)
+      (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                            "Number of top level images: %d (reading primary image only)",
+                            number_of_top_level_images);
+    if (number_of_top_level_images == 0)
       ThrowHEIFReaderException(CorruptImageError, AnErrorHasOccurredReadingFromFile, image);
-    }
+
+    heif_status=heif_context_get_primary_image_handle(heif, &heif_image_handle);
+    if (heif_status.code == heif_error_Memory_allocation_error)
+      ThrowHEIFReaderException(ResourceLimitError, MemoryAllocationFailed, image);
+    if (heif_status.code != heif_error_Ok)
+      {
+        if (image->logging)
+          (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                "heif_context_get_primary_image_handle() reports error \"%s\"",
+                                heif_status.message);
+        ThrowHEIFReaderException(CorruptImageError, AnErrorHasOccurredReadingFromFile, image);
+      }
+  }
 
   /*
     Note: Those values are preliminary but likely the upper bound
@@ -602,7 +634,7 @@ static Image *ReadHEIFImage(const ImageInfo *image_info,
     }
 
   /* Read EXIF and XMP profile */
-  if (!ReadMetadata(heif_image_handle, image, exception))
+  if (!ReadMetadata(image_info, heif_image_handle, image, exception))
     {
       HEIFReadCleanup();
       return NULL;

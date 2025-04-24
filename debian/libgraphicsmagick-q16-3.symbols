@@ -599,6 +599,7 @@ libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3 #MINVER#
  MagickSetConfirmAccessHandler@Base 1.3.8
  MagickSetFileAttributes@Base 1.3.24
  MagickSetFileSystemBlockSize@Base 1.3.8
+ MagickSizeStrToInt64@Base 1.4+really1.3.45
  MagickSpawnVP@Base 1.3.5
  MagickStripSpacesFromString@Base 1.3.21
  MagickStripString@Base 1.4+really1.3.37
@@ -799,6 +800,7 @@ libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3 #MINVER#
  ReferenceBlob@Base 1.3.5
  ReferenceCache@Base 1.3.5
  ReferenceImage@Base 1.3.5
+ RegisterAAIImage@Base 1.4+really1.3.44
  RegisterARTImage@Base 1.3.5
  RegisterAVSImage@Base 1.3.5
  RegisterBMPImage@Base 1.3.5
@@ -1030,6 +1032,7 @@ libGraphicsMagick-Q16.so.3 libgraphicsmagick-q16-3 #MINVER#
  TransparentImage@Base 1.3.5
  UnlockSemaphoreInfo@Base 1.3.5
  UnmapBlob@Base 1.3.5
+ UnregisterAAIImage@Base 1.4+really1.3.44
  UnregisterARTImage@Base 1.3.5
  UnregisterAVSImage@Base 1.3.5
  UnregisterBMPImage@Base 1.3.5

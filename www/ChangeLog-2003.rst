@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2003
+================================
+
 2003-12-28  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/annotate.c (RenderFreetype): Ensure that image storage
@@ -486,7 +490,7 @@
     www/conjure.html, www/convert.html, www/display.html, www/gm.html,
     www/identify.html, www/import.html, www/mogrify.html,
     www/montage.html: added documentation for "-define" command line
-    option.	
+    option. 
 
   - doc/brief\_options.imdoc, doc/options.imdoc: Added documentation
     for "-define" command line option.
@@ -551,7 +555,7 @@
 
   - magick/render.c (GetPixelOpacity): Removed inline directive.  No
     one in their right mind could ever imagine this function inlining
-    successfully.	
+    successfully.   
 
   - magick/cache.c (IsNexusInCore): Adjusted so function inlines as
     requested.
@@ -1196,7 +1200,7 @@
 
   - magick/magick.c (GetMagickInfoArray): Decided that the const
     return value was a bad idea.  Therefore, the return type has been
-    made non-const.	
+    made non-const. 
 
   - tests/constitute.c, tests/rwblob.c, tests/rwfile.c : Define
     MAGICK\_IMPLEMENTATION since these test programs using some internal
@@ -2022,7 +2026,7 @@
 2003-06-22  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/static.h: Add prototypes for RegisterXTRNImage and
-    UnregisterXTRNImage.	
+    UnregisterXTRNImage.    
 
   - Makefile.am (DISTDIRS): Don't distribute the `guide`
     subdirectory. It is available for checkout from CVS.
@@ -2126,7 +2130,7 @@
     transform colorspace to RGB when retrieving `pixel` color value.
     Release memory acquired to store `length` pointer.  Picked up
     memory leak fix related to `SV \*\*reference\_vector` variable from
-    John Cristy's ImageMagick.	
+    John Cristy's ImageMagick.      
 
   - configure: Incorporate patch to handle inline better.
 
@@ -2134,17 +2138,17 @@
     code not reached" warning.
 
   - magick/log.c (GetLogBlob): Eliminate warning regarding
-    unreached code.	
+    unreached code. 
 
   - magick/command.c (AnimateImageCommand): Eliminate warning regarding
-    unreached code.	
+    unreached code. 
     (ConvertImageCommand): Eliminate warning regarding
-    unreached code.	
+    unreached code. 
     (ImportImageCommand): Eliminate warning regarding
-    unreached code.	
+    unreached code. 
 
   - magick/type.c (GetTypeBlob): Eliminate warning regarding
-    unreached code.	
+    unreached code. 
 
   - magick/blob.c (GetConfigureBlob): Eliminate warning regarding
     unreached code.
@@ -2601,18 +2605,18 @@
   - magick/log.c (GetLogBlob): Report registry key lookup failures.
 
   - magick/delegate.c (ReadConfigureFile): Report registry key
-    lookup failures.	
+    lookup failures.        
 
   - magick/blob.c (GetConfigureBlob): Report registry key lookup
     failures. Also ensure correct return value when an error is
-    reported.	
+    reported.       
 
   - magick/module.c (FindMagickModule): Report registry key lookup
     failures. Also ensure correct return value when an error is
     reported.
 
   - magick/nt\_base.c (NTRegistryKeyLookup): Simplify base key lookup
-    code, and improve coding style.	
+    code, and improve coding style. 
 
   - coders/logo.c, Copyright.txt, www/Copyright.html: Acknowledge
     and respect the XFig copyright.
@@ -2907,7 +2911,7 @@
 
   - coders/jpeg.c (WriteJPEGImage): If the image resolution is
     overwritten with 72DPI, make sure that the resolution units are
-    set to PixelsPerInchResolution.	
+    set to PixelsPerInchResolution. 
 
   - coders/jpeg.c (WriteJPEGImage): Don't overwrite the image
     resolution if it is valid.
@@ -2944,7 +2948,7 @@
 
   - VisualMagick/installer/inc/files-perlmagick.isx (Source):
     Only install PerlMagick PPD files if the user selects to install
-    PerlMagick.	
+    PerlMagick.     
 
   - VisualMagick/installer/inc/files-com.isx (Source): Only
     install ImageMagickObject files if the user selects to install
@@ -3825,7 +3829,7 @@
   - coders/mat.c (ReadMATImage): Set image->depth to valid values.
 
   - PerlMagick/Magick.xs: Update so that new DestroyImage assertions
-     aren't asserted.
+    aren't asserted.
 
   - magick/list.c (DestroyImageList): Update so that new DestroyImage
     assertions aren't asserted.

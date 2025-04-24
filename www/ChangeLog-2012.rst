@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2012
+================================
+
 2012-12-31  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/command.c: Added -auto-orient to 'convert' and 'mogrify'

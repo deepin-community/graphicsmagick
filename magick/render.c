@@ -1,5 +1,5 @@
 /*
-% Copyright (C) 2003-2022 GraphicsMagick Group
+% Copyright (C) 2003-2024 GraphicsMagick Group
 % Copyright (C) 2002 ImageMagick Studio
 % Copyright 1991-1999 E. I. du Pont de Nemours and Company
 %
@@ -2437,6 +2437,12 @@ char *  ExtractTokensBetweenPushPop (
   Extract attribute name from input stream, get attribute, and insert it's
   value into the input stream.  Return updated pointer into input stream.
   Added to support new elements "use" and "class".
+
+  FIXME: Need to add anti-recursion measures.
+
+  See if DrawImageGetCurrentRecurseLevel(),
+  DrawImageSetCurrentRecurseLevel(), DrawImageRecurseIn(),
+  DrawImageRecurseOut() can be used.
 */
 static
 char * InsertAttributeIntoInputStream (
@@ -2459,7 +2465,7 @@ char * InsertAttributeIntoInputStream (
   size_t NeededLength;
 
   if (*pStatus == MagickFail)
-    return MagickFail;
+    return (char *) NULL;
 
   /* get attribute name, then get attribute value */
   if (MagickGetToken(q,&q,*ptoken,*ptoken_max_length) < 1)
@@ -2936,6 +2942,7 @@ DrawImage(Image *image,const DrawInfo *draw_info)
       {
         if (LocaleCompare("class",keyword) == 0)
           {/*class*/
+            /* FIXME: Deal with possible recursion */
             q = InsertAttributeIntoInputStream(keyword,q,&primitive,&primitive_extent,
                                                &token,&token_max_length,image,
                                                &status,MagickFalse/*UndefAttrIsError*/);
@@ -3897,7 +3904,8 @@ DrawImage(Image *image,const DrawInfo *draw_info)
               stop_color;
 
             MagickGetToken(q,&q,token,token_max_length);
-            (void) QueryColorDatabase(token,&stop_color,&image->exception);
+            if ((status &= QueryColorDatabase(token,&stop_color,&image->exception)) == MagickFail)
+              break;
             (void) GradientImage(image,&start_color,&stop_color);
             start_color=stop_color;
             MagickGetToken(q,&q,token,token_max_length);
@@ -3920,8 +3928,8 @@ DrawImage(Image *image,const DrawInfo *draw_info)
 
                 /* when setting new stroke color, try to preserve stroke-opacity */
                 Quantum StrokeOpacityOld = graphic_context[n]->stroke.opacity;
-                (void) QueryColorDatabase(token,&graphic_context[n]->stroke,&image->exception);
-
+                if ((status &= QueryColorDatabase(token,&graphic_context[n]->stroke,&image->exception)) == MagickFail)
+                  break;
                 if (graphic_context[n]->stroke.opacity != TransparentOpacity)
                   {/*stroke color != 'none'*/
 
@@ -4252,8 +4260,8 @@ DrawImage(Image *image,const DrawInfo *draw_info)
         if (LocaleCompare("text-undercolor",keyword) == 0)
           {
             MagickGetToken(q,&q,token,token_max_length);
-            (void) QueryColorDatabase(token,&graphic_context[n]->undercolor,
-              &image->exception);
+            status &= QueryColorDatabase(token,&graphic_context[n]->undercolor,
+                                         &image->exception);
             break;
           }
         if (LocaleCompare("translate",keyword) == 0)
@@ -4274,6 +4282,7 @@ DrawImage(Image *image,const DrawInfo *draw_info)
       {
         if (LocaleCompare("use",keyword) == 0)
           {
+            /* FIXME: nothing prevents infinite recursion of "use" */
             q = InsertAttributeIntoInputStream(keyword,q,&primitive,&primitive_extent,
                                                &token,&token_max_length,image,
                                                &status,MagickTrue/*UndefAttrIsError*/);
@@ -4977,7 +4986,7 @@ DrawPatternPath(Image *image,const DrawInfo *draw_info,const char *name,
   image_info->size=AllocateString(geometry->value);
   *pattern=AllocateImage(image_info);
   DestroyImageInfo(image_info);
-  (void) QueryColorDatabase("none",&(*pattern)->background_color,
+  status &= QueryColorDatabase("none",&(*pattern)->background_color,
     &image->exception);
   (void) SetImage(*pattern,OpaqueOpacity);
   (void) LogMagickEvent(RenderEvent,GetMagickModule(),

@@ -1,3 +1,7 @@
+================================
+GraphicsMagick ChangeLog - 2011
+================================
+
 2011-12-30  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
 
   - magick/pixel\_cache.c (AcquireCacheNexus):
